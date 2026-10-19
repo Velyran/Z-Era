@@ -34,6 +34,7 @@ MonoBehaviour:
   - pr_tk_09_pickweaponmodels_unfinished
   flagsToSetOnComplete:
   - pr_all_finished
+  - Achievement01
   onAccept:
     m_PersistentCalls:
       m_Calls: []

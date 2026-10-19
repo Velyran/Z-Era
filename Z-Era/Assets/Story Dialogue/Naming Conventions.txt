@@ -1,10 +1,24 @@
 Dialogue资产命名规范：字母全小写
 章节缩写_对话缩写_（与玩家对话的）角色名_第几次对话_对话简洁描述_状态（开始、完成、重复等）
-例如：
-pr_dia_harper_01_tk01_start
+例如：pr_dia_harper_01_tk01_start
 ch01_dia_harper_01_tk01_repeat
+
+Node ID（局部）命名规范：字母全小写
+角色名_第几段对话
+例如：harper_01
 
 Task资产命名规范：字母全小写
 章节缩写_任务缩写_第几个任务_任务简洁描述
-例如：
-pr_tk_01_pickweapon
+例如：pr_tk_01_pickweapon
+
+Quest ID（全局）命名规范：字母全小写
+章节缩写_章节缩写_任务缩写_第几个任务
+例如：pr_tk_01
+
+Talked Flag（全局）
+章节缩写_dia_角色名_描述
+例如：pr_dia_01_tk01_unfinished
+
+Objective ID（局部）
+第几个目标_简洁描述
+例如：01_pickweapon

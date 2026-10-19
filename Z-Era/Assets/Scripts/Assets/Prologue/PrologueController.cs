@@ -179,7 +179,7 @@ public class PrologueController : MonoBehaviour
     [Tooltip("序章全部内容完成后设置的 Flag（由最终对话/任务的 UnityEvent 调 DialogueFlags.SetFlagTrue 置位），每帧检测到它为 true 即切回主菜单")]
     public string allFinishedFlag = "pr_all_finished";
     [Tooltip("序章结束后切换的目标场景名（走全局黑屏加载过渡）")]
-    public string menuSceneName = "MainMenu";
+    public string menuSceneName = SceneTransitionController.SceneMainMenu;
 
     // 线性阶段的当前进度
     private Stage stage = Stage.WaitingFlag;

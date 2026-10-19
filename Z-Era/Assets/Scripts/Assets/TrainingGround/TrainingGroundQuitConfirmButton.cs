@@ -25,7 +25,7 @@ public class TrainingGroundQuitConfirmButton : MonoBehaviour
 
     [Tooltip("确认退出后返回的场景名，场景需加入 Build Settings")]
     [SerializeField]
-    private string menuSceneName = "MainMenu";
+    private string menuSceneName = SceneTransitionController.SceneMainMenu;
 
     private void Awake()
     {

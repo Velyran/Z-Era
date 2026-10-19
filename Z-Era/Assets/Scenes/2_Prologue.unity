@@ -6858,7 +6858,7 @@ GameObject:
   m_Component:
   - component: {fileID: 442616294}
   m_Layer: 0
-  m_Name: --------------- Environment ---------------
+  m_Name: --------------- Scene ---------------
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9865,7 +9865,7 @@ MonoBehaviour:
   yesButton: {fileID: 130183513}
   noButton: {fileID: 1960760866}
   dissolveDuration: 1
-  menuSceneName: MainMenu
+  menuSceneName: 0_MainMenu
 --- !u!1 &657001376
 GameObject:
   m_ObjectHideFlags: 0
@@ -25488,7 +25488,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1813991337}
   m_Layer: 0
-  m_Name: --------------- Environment ---------------
+  m_Name: --------------- Scene ---------------
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26267,7 +26267,7 @@ MonoBehaviour:
   woodBoxHighlightScale: 1.01
   woodBoxBlinkSpeed: 1.5
   allFinishedFlag: pr_all_finished
-  menuSceneName: MainMenu
+  menuSceneName: 0_MainMenu
 --- !u!4 &1859402163
 Transform:
   m_ObjectHideFlags: 0

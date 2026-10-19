@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -61,6 +61,10 @@ public class PlayerController : MonoBehaviour
 
     [Tooltip("是否锁定移动（剧情演出用）：锁定时移动输入清零，视角与射击不受影响")]
     public bool movementLocked;
+
+    [Tooltip("外部接管移动（爬梯等）：为 true 时本组件不再处理移动与重力，视角与射击不受影响")]
+    [HideInInspector]
+    public bool movementExternal;
 
     private float rotationX = 0.0f;
 
@@ -164,6 +168,21 @@ public class PlayerController : MonoBehaviour
         }
 
         positionFrozen = false;
+
+        // 外部接管移动（爬梯）：只停移动与重力，
+        // 相机、射击、后坐力仍照常运行。
+        if (movementExternal)
+        {
+            verticalVelocity = 0f;
+
+            // 攀爬途中可能还在播放脚步声，立即停止。
+            if (audioSource != null && audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
+
+            return;
+        }
 
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");

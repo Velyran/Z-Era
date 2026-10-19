@@ -24,6 +24,12 @@ using UnityEngine.UI;
 /// </summary>
 public class SceneTransitionController : MonoBehaviour
 {
+    // 场景名常量：与 Assets/Scenes 下的文件名保持一致
+    // （Unity 按文件名寻址，必须与 Build Settings 中登记的名字相同）
+    public const string SceneMainMenu = "0_MainMenu";
+    public const string SceneTrainingGround = "1_TrainingGround";
+    public const string ScenePrologue = "2_Prologue";
+
     private static SceneTransitionController instance;
 
     // 全局过渡入口：任何场景的任何脚本都可以直接调用。
@@ -204,9 +210,44 @@ public class SceneTransitionController : MonoBehaviour
         ShowRandomTip();
 
         // 异步加载：加载到 90% 后暂停等待激活，激活由本脚本放行，
-        // 进度条按 progress / 0.9 映射到 0~100%
+        // 进度条按 progress / 0.9 映射到 0~100%。
+        // 目标场景未登记进 Build Settings（或名字拼错）时
+        // LoadSceneAsync 返回 null 而不是抛异常，这里必须先判空，
+        // 否则下一行解引用会抛 NullReferenceException
         AsyncOperation operation =
             SceneManager.LoadSceneAsync(sceneName);
+
+        if (operation == null)
+        {
+            Debug.LogError(
+                "场景加载失败：'" + sceneName + "' 未添加到 " +
+                "Build Settings，或场景名不匹配。请检查 " +
+                "File > Build Settings > Scenes In Build。",
+                this
+            );
+
+            // 收尾：恢复世界与声音、隐藏进度条、黑屏溶解消失，
+            // 避免把游戏留在黑屏且暂停的死状态里
+            Time.timeScale = 1f;
+            AudioListener.pause = false;
+
+            if (progressGroup != null)
+            {
+                progressGroup.SetActive(false);
+            }
+
+            fadeImage.Hide();
+
+            yield return new WaitUntil(() => fadeImage.isHideComplete);
+
+            if (fadeImage.graphic != null)
+            {
+                fadeImage.graphic.raycastTarget = false;
+            }
+
+            isTransitioning = false;
+            yield break;
+        }
 
         operation.allowSceneActivation = false;
 
@@ -254,6 +295,18 @@ public class SceneTransitionController : MonoBehaviour
         yield return null;
 
         DynamicGI.UpdateEnvironment();
+
+        // 回到主菜单即结束本轮游玩：清空当前剧情标记与任务进度，
+        // 下次进入关卡时任务可以重新接取、对话可以重新触发，
+        // 不会因为全局标记残留而卡住无法重玩。
+        // 注意只清"当前"标记：成就、关卡解锁等一次性进度存在
+        // DialogueFlags 的历史标记里（HasEverSetFlag / PlayerPrefs），
+        // 不受影响，设置过一次即永久生效
+        if (SceneManager.GetActiveScene().name == SceneMainMenu)
+        {
+            DialogueFlags.ResetProgress();
+            QuestManager.ResetAll();
+        }
 
         // 新场景已完全激活且仍被黑屏盖住：恢复时间流与全局声音，
         // 随后才溶解露出新场景。

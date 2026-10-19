@@ -10164,7 +10164,7 @@ GameObject:
   m_Component:
   - component: {fileID: 996299570}
   m_Layer: 0
-  m_Name: --------------- Environment ---------------
+  m_Name: --------------- Scene ---------------
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14576,7 +14576,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1609808731}
   m_Layer: 0
-  m_Name: --------------- Environment ---------------
+  m_Name: --------------- Scene ---------------
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17973,7 +17973,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   confirmCanvas: {fileID: 1458181645}
   quitConfirm: {fileID: 1187776262}
-  menuSceneName: MainMenu
+  menuSceneName: 0_MainMenu
 --- !u!4 &1947604469 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 48148661188152178, guid: d58885a2a436c0d4884f649c263c03ab,

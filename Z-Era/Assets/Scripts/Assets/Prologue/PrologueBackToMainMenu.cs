@@ -42,7 +42,7 @@ public class PrologueBackToMainMenu : MonoBehaviour
 
     [Tooltip("点击 YesButton 后切换的目标场景名")]
     [SerializeField]
-    private string menuSceneName = "MainMenu";
+    private string menuSceneName = SceneTransitionController.SceneMainMenu;
 
     // 打开前的光标状态，关闭时恢复
     private CursorLockMode previousCursorLockState;

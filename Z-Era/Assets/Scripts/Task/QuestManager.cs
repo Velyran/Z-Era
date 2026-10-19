@@ -88,6 +88,25 @@ public class QuestManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 清空全部任务状态与目标进度：回到主菜单、准备重新游玩关卡时调用。
+    /// 只重置任务系统自身的数据，不触碰对话标记（由 DialogueFlags 负责）。
+    /// 已完成任务列表一并清空，重新游玩时任务面板不会残留上一轮记录。
+    /// </summary>
+    public static void ResetAll()
+    {
+        if (instance == null)
+        {
+            return;
+        }
+
+        instance.questStates.Clear();
+        instance.questAssets.Clear();
+        instance.activeQuestOrder.Clear();
+        instance.completedQuestOrder.Clear();
+        instance.objectiveProgress.Clear();
+    }
+
     private static string ProgressKey(string questId, string objectiveId)
     {
         return questId + ":" + objectiveId;

@@ -13,9 +13,13 @@ using UnityEngine.UI;
 /// 可与 MainMenuButtonHoverFill 叠加挂在同一按钮上，互不干扰。
 ///
 /// 锁面模式：勾选"锁定"后本按钮全程不跳转，作为盖在跳转按钮
-/// 上方的锁面使用——解锁标记（DialogueFlags）未设置时点击显示
-/// 提示文字，已设置时点击触发 UI 溶解并在溶解完成后禁用自身，
-/// 露出下方的跳转按钮；已溶解的锁面在面板重新打开时保持消失。
+/// 上方的锁面使用——解锁标记（DialogueFlags）从未置位时点击显示
+/// 提示文字，置位过（含上个存档、上次启动）时点击触发 UI 溶解并在
+/// 溶解完成后禁用自身，露出下方的跳转按钮。
+/// 解锁判定读的是"历史标记"（DialogueFlags.HasEverSetFlag）：
+/// 标记只要设置过一次为 true 就永久有效，回到主菜单重置本轮剧情
+/// 进度后锁面不会重新上锁；点击溶解这一动作本身也会写入
+/// PlayerPrefs，因此打包后的程序重启后锁面依然是消失状态。
 /// </summary>
 public class FrameButton : MonoBehaviour,
     IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
@@ -83,13 +87,15 @@ public class FrameButton : MonoBehaviour,
 
     [Header("锁定（勾选后本按钮成为锁面，全程不跳转）")]
 
-    [Tooltip("勾选后本按钮全程不跳转：解锁标记未设置时点击显示" +
-        "提示文字，已设置时点击触发 UI 溶解并禁用自身")]
+    [Tooltip("勾选后本按钮全程不跳转：解锁标记从未置位时点击显示" +
+        "提示文字，置位过时点击触发 UI 溶解并永久禁用自身")]
     [SerializeField]
     private bool lockEnabled;
 
     [Tooltip("解锁判定用的全局对话标记（DialogueFlags）；" +
-        "已设置时点击溶解消失，未设置时点击显示提示文字")]
+        "该标记只要设置过一次为 true 即视为已解锁（回到主菜单重置" +
+        "本轮剧情进度后不会重新上锁）。未解锁时点击显示提示文字，" +
+        "已解锁时点击溶解消失且永久不再出现")]
     [SerializeField]
     private string unlockFlagName;
 
@@ -127,14 +133,42 @@ public class FrameButton : MonoBehaviour,
     // 溶解已触发：此后点击全部忽略，直到溶解完成禁用自身
     private bool dissolving;
 
-    // 本次主菜单停留期间已通过点击溶解过：面板重开时保持消失。
-    // 回主菜单（重进场景）后自动复位，锁面重新出现、可再次点击溶解
+    // 已点击溶解过：面板重开、回到主菜单乃至重启程序后都保持消失。
+    // 状态存在 PlayerPrefs 里（键见 DissolvedPrefsPrefix），
+    // Awake 时读回，点击溶解时落盘
     private bool dissolved;
+
+    // 记录"该锁面已溶解"的 PlayerPrefs 键前缀
+    private const string DissolvedPrefsPrefix = "FrameButton.Dissolved.";
 
     private AudioSource audioSource;
 
+    // 本锁面在 PlayerPrefs 中的"已溶解"记录键。
+    // 用场景名 + 物体路径做键，同一场景里多个锁面互不影响，
+    // 场景内改名或挪位置会视为新锁面（重新出现）
+    private string DissolvedPrefsKey =>
+        DissolvedPrefsPrefix +
+        gameObject.scene.name + "/" + GetHierarchyPath(transform);
+
+    private string GetHierarchyPath(Transform target)
+    {
+        if (target.parent == null)
+        {
+            return target.name;
+        }
+
+        return GetHierarchyPath(target.parent) + "/" + target.name;
+    }
+
     private void Awake()
     {
+        // 读回"已溶解"记录：打包后的程序重启、回主菜单重进
+        // 场景后锁面依然不出现。非锁面按钮不写也不读
+        if (lockEnabled)
+        {
+            dissolved = PlayerPrefs.GetInt(DissolvedPrefsKey, 0) == 1;
+        }
+
         if (targetImage != null)
         {
             baseScale = targetImage.rectTransform.localScale;
@@ -167,11 +201,21 @@ public class FrameButton : MonoBehaviour,
     {
         // 已点击溶解过的锁面在面板重新打开时不复活：当帧直接禁用，
         // 发生在渲染前，不会闪一帧，也不重播溶解动画。
-        // 注意不查 flag：flag 为 true 但还没点击溶解时，
+        // 每次启用都按 PlayerPrefs 里的记录再确认一次：面板重开、
+        // 回主菜单重进场景、重启程序，锁面都不会再出现。
+        // 注意不查 flag：flag 置位但还没点击溶解时，
         // 锁面要正常出现，等玩家点击再溶解
-        if (dissolved)
+        if (lockEnabled)
         {
-            gameObject.SetActive(false);
+            if (!dissolved && PlayerPrefs.GetInt(DissolvedPrefsKey, 0) == 1)
+            {
+                dissolved = true;
+            }
+
+            if (dissolved)
+            {
+                gameObject.SetActive(false);
+            }
         }
     }
 
@@ -225,7 +269,9 @@ public class FrameButton : MonoBehaviour,
 
             PlayClickSound();
 
-            if (DialogueFlags.HasFlag(unlockFlagName))
+            // 读历史标记：flag 只要设置过一次为 true 就永久解锁，
+            // 回到主菜单重置本轮剧情进度后不会重新上锁
+            if (DialogueFlags.HasEverSetFlag(unlockFlagName))
             {
                 StartDissolve();
             }
@@ -344,6 +390,10 @@ public class FrameButton : MonoBehaviour,
         dissolving = true;
         dissolved = true;
 
+        // 立即落盘：解锁后本次点击即视为永久消失，
+        // 面板重开、回主菜单、重启程序都不再出现
+        SaveDissolved();
+
         if (dissolve == null)
         {
             Debug.LogWarning(
@@ -369,6 +419,27 @@ public class FrameButton : MonoBehaviour,
         }
 
         gameObject.SetActive(false);
+    }
+
+    // 记录本锁面已溶解（永久消失状态）
+    private void SaveDissolved()
+    {
+        PlayerPrefs.SetInt(DissolvedPrefsKey, 1);
+        PlayerPrefs.Save();
+    }
+
+    /// <summary>
+    /// 清除本锁面的"永久消失"记录，让它重新出现（仅供测试/清档）。
+    /// 正常玩法不需要调用。
+    /// </summary>
+    [ContextMenu("清除永久溶解记录（测试）")]
+    public void ClearDissolvedRecord()
+    {
+        PlayerPrefs.DeleteKey(DissolvedPrefsKey);
+        PlayerPrefs.Save();
+
+        dissolved = false;
+        dissolving = false;
     }
 
     // 用独立的临时物体播放点击音效：按钮常随面板整体禁用，

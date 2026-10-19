@@ -6,12 +6,27 @@ using UnityEngine;
 /// 静态方法供代码调用（HasFlag / SetFlag）；
 /// 实例方法供选项的 UnityEvent 在检查器里接线（SetFlagTrue 等）。
 /// 首次访问时自动创建常驻物体，无需手动摆进场景。
+///
+/// 两层标记：
+///   · 当前标记（HasFlag）：本轮游玩的剧情/任务进度，
+///     回到主菜单时由 ResetProgress 清空，关卡因此可以重新游玩；
+///   · 历史标记（HasEverSetFlag）：只要设置过一次为 true 就永久保留
+///     （PlayerPrefs 跨启动保存），供成就、关卡解锁等一次性进度使用，
+///     不受 ResetProgress 影响。
 /// </summary>
 public class DialogueFlags : MonoBehaviour
 {
+    // 历史标记在 PlayerPrefs 中的存储键（换行分隔的标记名清单）
+    private const string HistoryPrefsKey = "DialogueFlags.History";
+
     private static DialogueFlags instance;
 
+    // 当前标记：本轮游玩的剧情进度，ResetProgress 会清空
     private readonly HashSet<string> flags = new HashSet<string>();
+
+    // 历史标记：设置过一次即永久保留，ResetProgress 不清空
+    private readonly HashSet<string> historyFlags =
+        new HashSet<string>();
 
     public static DialogueFlags Instance
     {
@@ -37,6 +52,8 @@ public class DialogueFlags : MonoBehaviour
 
         instance = this;
         DontDestroyOnLoad(gameObject);
+
+        LoadHistory();
     }
 
     private void OnDestroy()
@@ -47,7 +64,7 @@ public class DialogueFlags : MonoBehaviour
         }
     }
 
-    // 标记是否已设置。
+    // 当前标记是否已设置（不含历史标记）。
     public static bool HasFlag(string flagName)
     {
         if (string.IsNullOrWhiteSpace(flagName))
@@ -58,7 +75,19 @@ public class DialogueFlags : MonoBehaviour
         return Instance.flags.Contains(flagName);
     }
 
-    // 设置或清除标记。
+    // 该标记是否曾经被设置为 true：跨场景、跨启动永久保留，
+    // 供成就、关卡解锁等一次性进度判断
+    public static bool HasEverSetFlag(string flagName)
+    {
+        if (string.IsNullOrWhiteSpace(flagName))
+        {
+            return false;
+        }
+
+        return Instance.historyFlags.Contains(flagName);
+    }
+
+    // 设置或清除当前标记；置位时同时写入历史标记
     public static void SetFlag(string flagName, bool value)
     {
         if (string.IsNullOrWhiteSpace(flagName))
@@ -69,6 +98,12 @@ public class DialogueFlags : MonoBehaviour
         if (value)
         {
             Instance.flags.Add(flagName);
+
+            // 首次置位即写入历史并落盘，此后永久保留
+            if (Instance.historyFlags.Add(flagName))
+            {
+                SaveHistory();
+            }
         }
         else
         {
@@ -76,10 +111,82 @@ public class DialogueFlags : MonoBehaviour
         }
     }
 
-    // 清空全部标记，例如游戏重新开局时调用。
+    // 清除历史标记（成就/解锁记录），用于测试或清档
+    public static void ClearEverSetFlag(string flagName)
+    {
+        if (string.IsNullOrWhiteSpace(flagName))
+        {
+            return;
+        }
+
+        if (Instance.historyFlags.Remove(flagName))
+        {
+            SaveHistory();
+        }
+    }
+
+    // 清空当前标记、保留历史标记：回到主菜单重开一轮时调用
+    public static void ResetProgress()
+    {
+        // 存储尚未创建时没有需要清空的内容，不为此额外创建常驻物体
+        if (instance == null)
+        {
+            return;
+        }
+
+        instance.flags.Clear();
+    }
+
+    // 清空全部标记（当前 + 历史），例如清档重开
     public static void ClearAll()
     {
         Instance.flags.Clear();
+        Instance.historyFlags.Clear();
+
+        PlayerPrefs.DeleteKey(HistoryPrefsKey);
+        PlayerPrefs.Save();
+    }
+
+    // 从 PlayerPrefs 还原历史标记（跨启动保留）
+    private void LoadHistory()
+    {
+        historyFlags.Clear();
+
+        string stored = PlayerPrefs.GetString(
+            HistoryPrefsKey,
+            string.Empty
+        );
+
+        if (string.IsNullOrEmpty(stored))
+        {
+            return;
+        }
+
+        foreach (string flagName in stored.Split('\n'))
+        {
+            string trimmed = flagName.Trim();
+
+            if (trimmed.Length > 0)
+            {
+                historyFlags.Add(trimmed);
+            }
+        }
+    }
+
+    private static void SaveHistory()
+    {
+        Instance.SaveHistoryInternal();
+    }
+
+    private void SaveHistoryInternal()
+    {
+        PlayerPrefs.SetString(
+            HistoryPrefsKey,
+            string.Join("\n", historyFlags)
+        );
+
+        // 立即落盘：成就/解锁记录不能因强退丢失
+        PlayerPrefs.Save();
     }
 
     // 以下实例方法供 UnityEvent 在检查器中动态接线。
