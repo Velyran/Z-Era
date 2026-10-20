@@ -13001,7 +13001,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6231616719488775518}
   - component: {fileID: 6095166997975772730}
-  - component: {fileID: 6827688237616555332}
   m_Layer: 5
   m_Name: DotToggle
   m_TagString: Untagged
@@ -13078,20 +13077,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 1
---- !u!114 &6827688237616555332
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5177972971322944125}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b75651805adfb7d439c53932893741f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 2beac6b06786a5549adb97857ffe0ceb, type: 3}
-  clickSoundVolume: 1
 --- !u!1 &5205305184182192075
 GameObject:
   m_ObjectHideFlags: 0
@@ -14664,7 +14649,6 @@ GameObject:
   m_Component:
   - component: {fileID: 806159884649333796}
   - component: {fileID: 811355731623875795}
-  - component: {fileID: 3612305698763398688}
   m_Layer: 5
   m_Name: DynamicToggle
   m_TagString: Untagged
@@ -14741,20 +14725,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 1
---- !u!114 &3612305698763398688
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6170285248911721883}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b75651805adfb7d439c53932893741f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 2beac6b06786a5549adb97857ffe0ceb, type: 3}
-  clickSoundVolume: 1
 --- !u!1 &6403754499865682293
 GameObject:
   m_ObjectHideFlags: 0

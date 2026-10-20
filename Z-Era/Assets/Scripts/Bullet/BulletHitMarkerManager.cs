@@ -36,6 +36,11 @@ public class BulletHitMarkerManager : MonoBehaviour
     private Mesh wireCubeMesh;
     private readonly Queue<BulletHole> liveMarkers = new Queue<BulletHole>();
 
+    // 初始化是否成功（Shader 与线框 Mesh 都已就绪）。
+    // 初始化失败时 Instance 仍然存在，若不在 Spawn 里拦住，
+    // 每次命中都会带着空的材质/网格进入 CreateMarker 抛异常
+    private bool ready;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -51,11 +56,13 @@ public class BulletHitMarkerManager : MonoBehaviour
         if (lineMaterial == null)
         {
             Debug.LogError(
-                "BulletHitMarkerManager 找不到可用的线框 Shader，无法生成命中标记。",
+                "BulletHitMarkerManager 找不到可用的线框 Shader，无法生成命中标记。" +
+                "打包版需把 Universal Render Pipeline/Unlit 加入 " +
+                "Project Settings > Graphics > Always Included Shaders，" +
+                "否则该 Shader 会在构建时被剥离。",
                 this
             );
 
-            enabled = false;
             return;
         }
 
@@ -70,6 +77,8 @@ public class BulletHitMarkerManager : MonoBehaviour
         }
 
         wireCubeMesh = CreateWireCubeMesh();
+
+        ready = true;
     }
 
     // 线段拓扑的 Mesh 只会被流水线当作线元渲染，
@@ -142,6 +151,13 @@ public class BulletHitMarkerManager : MonoBehaviour
                 "请在场景中添加挂载了 BulletHitMarkerManager 的物体。"
             );
 
+            return;
+        }
+
+        // 初始化失败（Shader 被剥离等）时直接跳过：
+        // 此时材质与线框网格都是空的，继续生成只会每发子弹抛一次异常
+        if (!Instance.ready)
+        {
             return;
         }
 

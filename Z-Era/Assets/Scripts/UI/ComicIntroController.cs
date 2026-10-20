@@ -710,21 +710,6 @@ public class ComicIntroController : MonoBehaviour, IPointerClickHandler
         // 先清根物体会让游戏画面提前闪出来
         EnsureBlackScreenCoversCanvas(blackScreen);
 
-        Debug.Log(
-            "ComicIntroController 收尾：黑屏 = '" + dissolve.name + "'" +
-                (autoPicked ? "（自动查找）" : "（检查器指定）") +
-                "，组件启用 = " + dissolve.enabled +
-                "，物件激活 = " + dissolve.gameObject.activeInHierarchy +
-                "，Shader = " +
-                (material != null && material.shader != null
-                    ? material.shader.name
-                    : "<无材质>") +
-                "，Location = " + dissolve.location.ToString("0.00") +
-                "，Duration = " + dissolve.duration.ToString("0.00") + " 秒" +
-                "，尺寸 = " + DescribeRect(blackScreen),
-            dissolve
-        );
-
         if (!IsDissolveMaterial(material))
         {
             Debug.LogWarning(

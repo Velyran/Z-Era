@@ -67,6 +67,15 @@ public class CrosshairSettingsPanel : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        // 再刷一次：面板（预制体实例）可能在 OnEnable 时
+        // SettingsManager 尚未把持久化配置读入内存，
+        // 那时同步出来的是默认值而不是玩家实际保存的值
+        RefreshControls();
+        RefreshPreview();
+    }
+
     private Slider FindSlider(string name)
     {
         return FindComponent<Slider>(name);

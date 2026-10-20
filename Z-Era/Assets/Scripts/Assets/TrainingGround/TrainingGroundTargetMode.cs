@@ -145,6 +145,27 @@ public class TrainingGroundTargetMode : MonoBehaviour
     [SerializeField, Min(0f)]
     private float edgeInset = 0.5f;
 
+    [Header("成就（完整一轮结束后按击倒数解锁）")]
+
+    [Tooltip("静态限时训练达成击倒数时设置的全局标记（DialogueFlags）；" +
+        "留空则不设置。必须是完整跑完倒计时的一轮，中途射击退出牌不算")]
+    [SerializeField]
+    private string staticAchievementFlag = "Achievement02";
+
+    [Tooltip("静态限时训练一轮内需要击倒的靶子数，达到即解锁")]
+    [SerializeField, Min(1)]
+    private int staticAchievementKnockdowns = 100;
+
+    [Tooltip("动态限时训练达成击倒数时设置的全局标记；" +
+        "留空则不设置。同样要求完整跑完倒计时。" +
+        "注意不能与静态的标记相同，否则两个成就会被当成同一个")]
+    [SerializeField]
+    private string dynamicAchievementFlag = "Achievement03";
+
+    [Tooltip("动态限时训练一轮内需要击倒的靶子数，达到即解锁")]
+    [SerializeField, Min(1)]
+    private int dynamicAchievementKnockdowns = 80;
+
     // 限时训练的阶段
     private enum StatsPhase
     {
@@ -433,7 +454,50 @@ public class TrainingGroundTargetMode : MonoBehaviour
         );
 
         UpdateStatsTexts();
+
+        // 成就只在"完整跑完倒计时"的一轮里判定：quit = true 是
+        // 中途射击退出牌结束的，击倒数再高也不算达成
+        if (!quit)
+        {
+            TryUnlockAchievement();
+        }
+
         LayDownAllTargets();
+    }
+
+    // 完整一轮结束后按当前模式与击倒数解锁成就：
+    // 静态限时训练看 staticAchievementKnockdowns，
+    // 动态限时训练看 dynamicAchievementKnockdowns。
+    // 标记置位后全局只弹一次（DialogueFlags 会写历史标记并广播）
+    private void TryUnlockAchievement()
+    {
+        string flagName;
+        int required;
+
+        if (currentMode == TrainingGroundMode.StaticTimedTraining)
+        {
+            flagName = staticAchievementFlag;
+            required = staticAchievementKnockdowns;
+        }
+        else if (currentMode ==
+            TrainingGroundMode.DynamicTimedTraining)
+        {
+            flagName = dynamicAchievementFlag;
+            required = dynamicAchievementKnockdowns;
+        }
+        else
+        {
+            // 自由训练不计成就
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(flagName) ||
+            knockdowns < required)
+        {
+            return;
+        }
+
+        DialogueFlags.SetFlag(flagName, true);
     }
 
     private void SetStateText(string message, Color color)

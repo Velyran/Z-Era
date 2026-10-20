@@ -317,6 +317,13 @@ namespace Migration.UI
                 + Mathf.FloorToInt(x * precision);
         }
 
+        // OnValidate 是 Unity 的消息机制（按方法名反射调用）。
+        // 父类 BaseMeshEffect.OnValidate 只在 #if UNITY_EDITOR 内存在：
+        //   · 编辑器编译时它存在，必须写 override 才不会报 CS0114 警告；
+        //   · 打包编译时它不存在，写 override 会报 CS0115（没有可重写的成员）。
+        // 因此这里与父类保持同样的 #if UNITY_EDITOR 包裹，
+        // 编辑器里走 override，打包时整个方法不参与编译。
+#if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
@@ -334,5 +341,6 @@ namespace Migration.UI
 
             SetVerticesDirty();
         }
+#endif
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,6 +7,11 @@ using UnityEngine;
 /// 静态方法供代码调用（HasFlag / SetFlag）；
 /// 实例方法供选项的 UnityEvent 在检查器里接线（SetFlagTrue 等）。
 /// 首次访问时自动创建常驻物体，无需手动摆进场景。
+///
+/// 标记置位广播（FlagSet）：某个当前标记从"未设置"变为"已设置"时
+/// 触发一次，成就弹窗等全局系统订阅它即可感知解锁瞬间。
+/// 三种来源（任务资产的 flagsToSetOnComplete、对话选项的
+/// SetFlagTrue、代码调用）都经过 SetFlag，因此都会被覆盖。
 ///
 /// 两层标记：
 ///   · 当前标记（HasFlag）：本轮游玩的剧情/任务进度，
@@ -27,6 +33,13 @@ public class DialogueFlags : MonoBehaviour
     // 历史标记：设置过一次即永久保留，ResetProgress 不清空
     private readonly HashSet<string> historyFlags =
         new HashSet<string>();
+
+    /// <summary>
+    /// 某个当前标记从"未设置"变为"已设置"时触发，参数为标记名。
+    /// 只在状态真正发生变化时触发：重复设置同一个已存在的标记
+    /// 不会再广播（成就弹窗因此天然只弹一次）。
+    /// </summary>
+    public static event Action<string> FlagSet;
 
     public static DialogueFlags Instance
     {
@@ -97,12 +110,19 @@ public class DialogueFlags : MonoBehaviour
 
         if (value)
         {
-            Instance.flags.Add(flagName);
+            // 只有从"未设置"变为"已设置"才算新解锁，
+            // 重复设置同一个标记不再广播（成就不会重复弹）
+            bool newlySet = Instance.flags.Add(flagName);
 
             // 首次置位即写入历史并落盘，此后永久保留
             if (Instance.historyFlags.Add(flagName))
             {
                 SaveHistory();
+            }
+
+            if (newlySet)
+            {
+                FlagSet?.Invoke(flagName);
             }
         }
         else

@@ -33,6 +33,10 @@ public class BulletHoleManager : MonoBehaviour
     private Material holeMaterial;
     private readonly Queue<BulletHole> liveHoles = new Queue<BulletHole>();
 
+    // 初始化是否成功：失败时不再生成弹孔，避免每次命中
+    // 都创建一批没有材质的 Quad（看不见却一直在累积）
+    private bool ready;
+
     // 重合弹孔的深度分层：每个弹孔沿法线额外偏移一小步，
     // 保证后打的弹孔深度更近、稳定地盖住先打的，避免排序抖动闪烁。
     private const float DepthStep = 0.001f;
@@ -55,11 +59,12 @@ public class BulletHoleManager : MonoBehaviour
         if (decalShader == null || bulletHoleTexture == null)
         {
             Debug.LogError(
-                "BulletHoleManager 缺少弹孔贴图或 Decal Shader，无法生成弹孔。",
+                "BulletHoleManager 缺少弹孔贴图或 Decal Shader，无法生成弹孔。" +
+                "打包版需把 Custom/BulletHoleDecal 加入 " +
+                "Project Settings > Graphics > Always Included Shaders。",
                 this
             );
 
-            enabled = false;
             return;
         }
 
@@ -67,6 +72,8 @@ public class BulletHoleManager : MonoBehaviour
         // BulletHoleDecal.shader 的贴图属性是 _BaseMap，
         // mainTexture 只对 _MainTex 生效，必须按名字赋值。
         holeMaterial.SetTexture("_BaseMap", bulletHoleTexture);
+
+        ready = true;
     }
 
     // 由 BulletHandle 在命中非 Zombie 表面时调用。
@@ -77,6 +84,12 @@ public class BulletHoleManager : MonoBehaviour
     )
     {
         if (Instance == null)
+        {
+            return;
+        }
+
+        // 初始化失败（Shader 被剥离或未配贴图）时不生成
+        if (!Instance.ready)
         {
             return;
         }

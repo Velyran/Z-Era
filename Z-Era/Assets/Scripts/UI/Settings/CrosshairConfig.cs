@@ -26,7 +26,9 @@ public class CrosshairConfig
     public float lineWidth = 2f;
     public float lineLength = 20f;
     public float gap = 5f;
-    public float opacity = 0.5f;
+
+    // 默认完全不透明：准星要清晰可见，玩家需要更淡时在设置面板里调
+    public float opacity = 1f;
 
     public bool dotEnabled = false;
 
