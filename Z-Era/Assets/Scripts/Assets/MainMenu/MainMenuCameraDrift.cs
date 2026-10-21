@@ -32,6 +32,9 @@ using UnityEngine;
 /// 其他要点：
 ///   · 平面基准在 Start 时锁定，运行时即使相机被 MouseLook
 ///     转动朝向，移动基准也不变，避免位置抖动；
+///   · 唯一的例外是 Reanchor()：换景（MainMenuCameraWipe）在画面
+///     全黑时调用，把基准整体搬到新位置与新朝向；外部直接改
+///     transform 会在下一帧被旧中心拉回，必须走这个接口；
 ///   · 用 unscaledDeltaTime，Time.timeScale = 0 时依然漂移。
 /// </summary>
 public class MainMenuCameraDrift : MonoBehaviour
@@ -130,6 +133,26 @@ public class MainMenuCameraDrift : MonoBehaviour
         // 平面内的竖直基向量：直接用世界上方向，
         // 保证平面是"竖直站立"的，不会随相机 roll 倾斜。
         planeUp = Vector3.up;
+    }
+
+    /// <summary>
+    /// 重新锚定漫游基准：把相机摆到 position / rotation，
+    /// 以新位置为矩形中心、按新朝向重建竖直平面，偏移归零并重选方向。
+    /// 由 MainMenuCameraWipe 在画面全黑的那一帧调用（换景）；
+    /// 不走此接口直接改 transform，下一帧 Update 会按旧中心拉回。
+    /// </summary>
+    public void Reanchor(Vector3 position, Quaternion rotation)
+    {
+        transform.SetPositionAndRotation(position, rotation);
+
+        center = position;
+
+        BuildPlane();
+
+        // 从新中心重新出发，矩形边界仍是原来的相对偏移量
+        offset = Vector2.zero;
+
+        PickDirection();
     }
 
     private void Update()
