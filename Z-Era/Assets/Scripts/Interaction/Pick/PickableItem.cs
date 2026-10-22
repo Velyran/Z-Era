@@ -44,6 +44,11 @@ public class PickableItem : MonoBehaviour
     [Tooltip("覆盖全局的单件交互距离（米），0 表示使用 PickupController 的默认交互距离")]
     public float interactionDistanceOverride;
 
+    [Header("库存设置（分类为进背包的类型时生效：道具/武器/特殊收集品）")]
+
+    [Tooltip("进库存时写入的初始旋转（欧拉角，相对背包容器）。默认值即原全局写死的 (0, -90, -90)，不改则表现与从前一致")]
+    public Vector3 inventoryInitialRotation = new Vector3(0f, -90f, -90f);
+
     [Header("弹药箱设置（分类为 AmmoBox 时生效）")]
 
     [Tooltip("勾选后可无限次交互（新手教程无限补弹用）；取消勾选则按下面的可交互次数限制")]

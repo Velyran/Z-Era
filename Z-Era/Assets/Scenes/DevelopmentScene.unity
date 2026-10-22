@@ -1905,6 +1905,11 @@ PrefabInstance:
       propertyPath: bulletPool
       value: 
       objectReference: {fileID: 814677510}
+    - target: {fileID: 5633646285393606282, guid: f0860eda552b2ed47a7359cb6ccf9860,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6455613011539844577, guid: f0860eda552b2ed47a7359cb6ccf9860,
         type: 3}
       propertyPath: bulletPool

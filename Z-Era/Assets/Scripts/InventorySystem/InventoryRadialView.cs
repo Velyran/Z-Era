@@ -11,24 +11,8 @@ public class InventoryRadialView : MonoBehaviour
     // 只有一个道具时圆盘允许左右摆动的最大角度，不暴露到 Inspector。
     private const float SingleItemSwingAngle = 15f;
 
-    // 背包展示期间使用的无光照 Shader，避免场景灯光影响道具显示。
-    private static Shader itemUnlitShader;
-
-    private static Shader ItemUnlitShader
-    {
-        get
-        {
-            if (itemUnlitShader == null)
-            {
-                itemUnlitShader =
-                    Shader.Find(
-                        "Universal Render Pipeline/Unlit"
-                    );
-            }
-
-            return itemUnlitShader;
-        }
-    }
+    // 背包展示期间保留道具原材质与场景光照：
+    // 道具的凹凸细节靠光照呈现，换成无光照 Shader 会变一整块平面。
 
     [Serializable]
     public class InventoryItem
@@ -478,48 +462,10 @@ public class InventoryRadialView : MonoBehaviour
                         continue;
                     }
 
-                    // 先保存贴图与颜色再换 Unlit Shader：
-                    // URP Lit 与 URP Unlit 属性同名会自动保留，
-                    // 其他 Shader 则手动搬运，避免道具变成纯白。
-                    if (ItemUnlitShader != null)
-                    {
-                        Texture baseMap =
-                            itemMaterial.HasProperty("_BaseMap")
-                                ? itemMaterial.GetTexture("_BaseMap")
-                                : null;
-
-                        if (baseMap == null &&
-                            itemMaterial.HasProperty("_MainTex"))
-                        {
-                            baseMap =
-                                itemMaterial.GetTexture("_MainTex");
-                        }
-
-                        Color baseColor =
-                            itemMaterial.HasProperty("_BaseColor")
-                                ? itemMaterial.GetColor("_BaseColor")
-                                : Color.white;
-
-                        itemMaterial.shader = ItemUnlitShader;
-
-                        if (baseMap != null &&
-                            itemMaterial.HasProperty("_BaseMap"))
-                        {
-                            itemMaterial.SetTexture(
-                                "_BaseMap",
-                                baseMap
-                            );
-                        }
-
-                        if (itemMaterial.HasProperty("_BaseColor"))
-                        {
-                            itemMaterial.SetColor(
-                                "_BaseColor",
-                                baseColor
-                            );
-                        }
-                    }
-
+                    // 保留道具原材质与场景光照（模型凹凸靠光照呈现，
+                    // 换无光照 Shader 会变成一整块平面），
+                    // 只把渲染队列提到 Canvas 之后，让道具绘制在
+                    // 溶解背景之上；材质是实例，改队列不污染材质资产。
                     itemMaterial.renderQueue =
                         ItemOverlayRenderQueue;
                 }

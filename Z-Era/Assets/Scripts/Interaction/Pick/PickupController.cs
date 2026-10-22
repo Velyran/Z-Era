@@ -307,8 +307,11 @@ public class PickupController : MonoBehaviour
 
         item.transform.SetParent(container, false);
         item.transform.localPosition = Vector3.zero;
+
+        // 初始旋转逐件配置（PickableItem.Inventory Initial Rotation），
+        // 默认值与原写死的 (0, -90, -90) 相同，老物品表现不变
         item.transform.localRotation =
-            Quaternion.Euler(0f, -90f, -90f);
+            Quaternion.Euler(item.inventoryInitialRotation);
 
         // 道具入包后停用并关闭物理，由圆盘视图在展示时统一接管。
         item.gameObject.SetActive(false);
