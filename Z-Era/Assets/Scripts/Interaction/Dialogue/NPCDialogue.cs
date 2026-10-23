@@ -7,9 +7,13 @@ using UnityEditor;
 #endif
 
 /// <summary>
-/// NPC 对话触发器，挂在人物根物体上。
-/// 准星指向本 NPC 且在交互距离内时显示提示，
-/// 按下交互键开始对话。
+/// NPC 对话触发器，挂在人物根物体上。触发方式在检查器二选一：
+/// - 对准目标按 E：准星指向本 NPC 且在交互距离内、站在朝向
+///   扇形内，按交互键触发（原有行为）；
+/// - 位于触发器内自动触发：进入本物体上勾选 is Trigger 的碰撞体
+///   即直接开始对话，无需按键、无需对准、不受扇形限制，
+///   进入物体按 Tag 过滤，同一次停留只触发一次；
+///   按键提示文本仅对准模式显示。
 /// 支持后续对话样式：
 /// - 默认：每次对话使用默认资产，内容相同；
 /// - playOnce：只能完整对话一次；
@@ -49,14 +53,37 @@ public class NPCDialogue : MonoBehaviour
     [SerializeField]
     private bool playOnce;
 
-    [Tooltip("开始对话的交互按键")]
+    [Tooltip("开始对话的交互按键（仅\"对准目标按 E\"模式使用；触发器模式自动触发，不用按键）")]
     [SerializeField]
     private KeyCode interactKey = KeyCode.E;
 
-    [Tooltip("准星指向本 NPC 且距离小于该值时才能开始对话（米）")]
+    [Tooltip("准星指向本 NPC 且距离小于该值时才能开始对话（米），仅对准模式使用")]
     [Min(0.1f)]
     [SerializeField]
     private float interactDistance = 2.5f;
+
+    /// <summary>对话触发方式。</summary>
+    public enum TriggerMode
+    {
+        // 准星指向本 NPC 且在交互距离内按 E（原有行为）。
+        AimAtNpc = 0,
+
+        // 进入本物体的触发器即自动开始对话，无需按键与对准。
+        InsideTrigger = 1,
+    }
+
+    [Header("触发方式")]
+
+    [Tooltip("对准目标按 E：准星指向本 NPC、在交互距离内、站在朝向" +
+        "扇形内，按交互键触发（原行为，需要碰撞体）；位于触发器内自动" +
+        "触发：进入勾选 is Trigger 的碰撞体即直接开始对话，无需按键与" +
+        "对准、不受扇形限制，每次进入触发一次")]
+    [SerializeField]
+    private TriggerMode triggerMode = TriggerMode.AimAtNpc;
+
+    [Tooltip("进入触发器的物体必须具有的 Tag，留空则不限（仅\"位于触发器内\"模式使用，玩家根物体通常为 Player）")]
+    [SerializeField]
+    private string triggerTag = "Player";
 
     [Header("提示")]
 
@@ -64,7 +91,7 @@ public class NPCDialogue : MonoBehaviour
     [SerializeField]
     private TMP_Text promptText;
 
-    [Tooltip("提示文本格式，{0} 会被替换为按键名")]
+    [Tooltip("提示文本格式，{0} 会被替换为按键名（仅对准模式显示；触发器模式自动触发、不出按键提示）")]
     [SerializeField]
     private string promptFormat = "按 {0} 对话";
 
@@ -78,17 +105,21 @@ public class NPCDialogue : MonoBehaviour
 
     [Header("朝向限制")]
 
-    [Tooltip("是否要求玩家站在 NPC 朝向的指定角度范围内才能对话（防止绕到 NPC 背后对话）")]
+    [Tooltip("是否要求玩家站在 NPC 朝向的指定角度范围内才能对话（防止绕到 NPC 背后对话）；仅\"对准目标按 E\"模式生效")]
     [SerializeField]
     private bool requireForwardZone = true;
 
-    [Tooltip("允许对话的半角（度）：玩家相对 NPC 正前方偏离不超过该角度时可对话，180 等于不限制")]
+    [Tooltip("允许对话的半角（度）：玩家相对 NPC 正前方偏离不超过该角度时可对话，180 等于不限制（仅对准模式生效）")]
     [Range(0f, 180f)]
     [SerializeField]
     private float interactHalfAngle = 90f;
 
     private Camera cachedCamera;
     private DialogueRunner dialogueRunner;
+
+    // 玩家控制组件：判断"玩家是否被外部系统锁定"用
+    // （如第一章睁眼开场的全锁定期间不允许开对话）。
+    private PlayerController cachedPlayerController;
 
     // 已发起对话、等待其结束（结束后设置标记）。
     private bool awaitingEnd;
@@ -102,6 +133,16 @@ public class NPCDialogue : MonoBehaviour
     // 是否已经从对话资产中取得 NPC 名字。
     private bool hasIntroduced;
 
+    // 触发器模式：当前位于触发器内、且匹配 Tag 的碰撞体。
+    // 用集合而非计数，玩家身上多个碰撞体进出也不会错乱。
+    private readonly HashSet<Collider> insideColliders =
+        new HashSet<Collider>();
+
+    // 触发器模式：本次进入是否已自动触发过对话。同一次停留只
+    // 触发一次（否则对话一结束立刻无限重开），玩家整体离开
+    // 范围后复位，再次进入会重新触发。
+    private bool firedThisVisit;
+
     private void Awake()
     {
         // 重新加载场景后，根据 talkedFlag 恢复已介绍状态。
@@ -110,6 +151,35 @@ public class NPCDialogue : MonoBehaviour
         {
             hasIntroduced = true;
         }
+
+        // 触发器模式却没有触发器碰撞体：永远进不了范围，
+        // 这里明确告警而不是无声失效
+        if (triggerMode == TriggerMode.InsideTrigger &&
+            !HasTriggerCollider())
+        {
+            Debug.LogWarning(
+                "NPCDialogue：触发方式为\"位于触发器内\"，但本物体及其" +
+                    "子物体没有勾选 is Trigger 的碰撞体，无法进入触发范围。",
+                this
+            );
+        }
+    }
+
+    // 本物体及其子物体上是否存在勾选 is Trigger 的碰撞体。
+    private bool HasTriggerCollider()
+    {
+        foreach (
+            Collider childCollider in
+            GetComponentsInChildren<Collider>(true)
+        )
+        {
+            if (childCollider.isTrigger)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void OnEnable()
@@ -123,6 +193,35 @@ public class NPCDialogue : MonoBehaviour
         {
             dialogueRunner.DialogueNodeShown -= OnDialogueNodeShown;
             dialogueRunner = null;
+        }
+
+        // 离开场景/禁用后重新启用：进出事件不会再补发，
+        // 这里清空，避免残留"在范围内"的假状态
+        insideColliders.Clear();
+    }
+
+    // 触发器模式：记录进入本物体触发器（is Trigger）的匹配 Tag 碰撞体。
+    // 无论当前模式如何都记录，检查器里运行时切换模式立即生效。
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!string.IsNullOrEmpty(triggerTag) &&
+            !other.CompareTag(triggerTag))
+        {
+            return;
+        }
+
+        insideColliders.Add(other);
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        insideColliders.Remove(other);
+
+        // 玩家整体离开范围：复位"本次进入已触发"，
+        // 下次进入会重新自动触发
+        if (insideColliders.Count == 0)
+        {
+            firedThisVisit = false;
         }
     }
 
@@ -150,12 +249,14 @@ public class NPCDialogue : MonoBehaviour
 
         bool talkAvailable = IsTalkAvailable();
 
-        // 无法对话、对话进行中、鼠标未锁定（背包打开等）时不检测。
+        // 无法对话、对话进行中、鼠标未锁定（背包打开等）、
+        // 玩家控制被外部锁定（如睁眼开场）时不检测。
         if (!talkAvailable ||
             (DialogueRunner.Instance != null &&
              DialogueRunner.Instance.CurrentState !=
                  DialogueRunner.State.Idle) ||
-            Cursor.lockState != CursorLockMode.Locked)
+            Cursor.lockState != CursorLockMode.Locked ||
+            !IsPlayerControlEnabled())
         {
             UpdatePrompt(false);
             return;
@@ -171,10 +272,29 @@ public class NPCDialogue : MonoBehaviour
             }
         }
 
-        // 设置面板打开期间禁止触发对话（避免界面叠加）
-        if (CanInteract() &&
-            !SettingsUIRoot.IsOpen &&
-            Input.GetKeyDown(interactKey))
+        bool canInteract = CanInteract();
+
+        // 设置面板打开期间禁止触发对话（避免界面叠加）。
+        // 对准模式：扇形内按交互键触发（原有行为）；
+        // 触发器模式：进入范围即自动触发，同一次停留仅一次
+        bool shouldStart;
+
+        if (triggerMode == TriggerMode.InsideTrigger)
+        {
+            shouldStart =
+                canInteract &&
+                !firedThisVisit &&
+                !SettingsUIRoot.IsOpen;
+        }
+        else
+        {
+            shouldStart =
+                canInteract &&
+                !SettingsUIRoot.IsOpen &&
+                Input.GetKeyDown(interactKey);
+        }
+
+        if (shouldStart)
         {
             DialogueAsset asset = SelectDialogue();
 
@@ -183,13 +303,23 @@ public class NPCDialogue : MonoBehaviour
                 awaitingEnd = true;
                 awaitingDialogueAsset = asset;
                 DialogueRunner.StartDialogue(asset);
+
+                // 触发器模式的"本次进入已触发"标记，
+                // 玩家整体离开范围时由 OnTriggerExit 复位
+                if (triggerMode == TriggerMode.InsideTrigger)
+                {
+                    firedThisVisit = true;
+                }
             }
 
             UpdatePrompt(false);
             return;
         }
 
-        UpdatePrompt(CanInteract());
+        // 按键提示仅对准模式显示（触发器模式自动触发，无需按键提示）
+        UpdatePrompt(
+            triggerMode == TriggerMode.AimAtNpc && canInteract
+        );
     }
 
     // 当前是否可对话：没有 playOnce 限制，且有可用资产。
@@ -271,8 +401,54 @@ public class NPCDialogue : MonoBehaviour
         hasIntroduced = true;
     }
 
+    // 玩家控制是否可用：PlayerController 被外部系统禁用时
+    //（如第一章睁眼开场的全锁定）不触发对话——否则对话开在
+    // 锁定期间，随后那个系统的解锁会把对话自己禁用的组件一并
+    // 解掉，表现为"对话进行中玩家还能动"。
+    // 场景里没有玩家控制器时不限制（纯 UI 场景）。
+    private bool IsPlayerControlEnabled()
+    {
+        if (cachedPlayerController == null)
+        {
+            cachedPlayerController =
+                FindObjectOfType<PlayerController>();
+        }
+
+        return cachedPlayerController == null ||
+               cachedPlayerController.enabled;
+    }
+
+    // 当前是否可交互：对准模式 = 准星射线 + 朝向扇形；
+    // 触发器模式 = 位于触发器范围内即可（不受扇形限制）。
     private bool CanInteract()
-    {        Ray ray = cachedCamera.ScreenPointToRay(
+    {
+        if (triggerMode == TriggerMode.InsideTrigger)
+        {
+            // 触发器模式：匹配 Tag 的玩家碰撞体在触发器内即可，
+            // 不做准星射线；顺带清理已销毁碰撞体的残留。
+            insideColliders.RemoveWhere(collider => collider == null);
+
+            // 清理后范围已空（如玩家碰撞体被销毁、没有补发 Exit）：
+            // 同步复位触发标记，保持"集合为空 ⇔ 可重新触发"一致
+            if (insideColliders.Count == 0)
+            {
+                firedThisVisit = false;
+                return false;
+            }
+
+            return true;
+        }
+
+        // 对准模式（Aim At Npc）：准星射线命中碰撞体，
+        // 再过朝向扇形限制
+        return CanInteractByAim() && IsInForwardZone();
+    }
+
+    // 原有行为：准星射线命中的碰撞体必须属于本 NPC
+    // （允许命中子物体的碰撞体），且在交互距离内。
+    private bool CanInteractByAim()
+    {
+        Ray ray = cachedCamera.ScreenPointToRay(
             new Vector3(
                 Screen.width * 0.5f,
                 Screen.height * 0.5f,
@@ -289,35 +465,36 @@ public class NPCDialogue : MonoBehaviour
             return false;
         }
 
-        // 命中的碰撞体必须属于本 NPC（允许命中子物体的碰撞体）。
         NPCDialogue owner =
             hit.collider.GetComponentInParent<NPCDialogue>();
 
-        if (owner != this)
+        return owner == this;
+    }
+
+    // 朝向限制（仅对准模式）：玩家必须站在 NPC 正前方
+    // interactHalfAngle 度的扇形范围内。水平面计算，忽略高度差，
+    // 避免玩家站得稍高/稍低时被误判到区域外。
+    private bool IsInForwardZone()
+    {
+        if (!requireForwardZone || interactHalfAngle >= 180f)
         {
-            return false;
+            return true;
         }
 
-        // 朝向限制：玩家必须站在 NPC 正前方 interactHalfAngle
-        // 度的扇形范围内。水平面计算，忽略高度差，
-        // 避免玩家站得稍高/稍低时被误判到区域外。
-        if (requireForwardZone && interactHalfAngle < 180f)
+        Vector3 npcForward = transform.forward;
+        Vector3 toPlayer =
+            cachedCamera.transform.position - transform.position;
+
+        npcForward.y = 0f;
+        toPlayer.y = 0f;
+
+        // 水平投影接近零（玩家在正上/正下方）时方向未定义，
+        // 按不通过处理。
+        if (toPlayer.sqrMagnitude < 0.0001f ||
+            Vector3.Angle(npcForward, toPlayer) >
+                interactHalfAngle)
         {
-            Vector3 npcForward = transform.forward;
-            Vector3 toPlayer =
-                cachedCamera.transform.position - transform.position;
-
-            npcForward.y = 0f;
-            toPlayer.y = 0f;
-
-            // 水平投影接近零（玩家在正上/正下方）时方向未定义，
-            // 按不通过处理。
-            if (toPlayer.sqrMagnitude < 0.0001f ||
-                Vector3.Angle(npcForward, toPlayer) >
-                    interactHalfAngle)
-            {
-                return false;
-            }
+            return false;
         }
 
         return true;
@@ -325,11 +502,12 @@ public class NPCDialogue : MonoBehaviour
 
     // 在 Scene 视图可视化对话朝向区域：半透明扇面 + 边界线 +
     // 正方向指示线，半径取对话交互距离，仅选中本物体时绘制。
-    // 编辑器专用，不参与打包。
+    // 扇形仅对准模式有意义，触发器模式不绘制。编辑器专用。
     private void OnDrawGizmosSelected()
     {
 #if UNITY_EDITOR
-        if (!requireForwardZone)
+        if (!requireForwardZone ||
+            triggerMode == TriggerMode.InsideTrigger)
         {
             return;
         }
