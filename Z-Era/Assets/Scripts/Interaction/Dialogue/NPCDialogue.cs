@@ -114,6 +114,11 @@ public class NPCDialogue : MonoBehaviour
     [SerializeField]
     private float interactHalfAngle = 90f;
 
+    [Tooltip("扇形区域朝向相对挂载物体正前方的水平偏转（度）：0 为跟随物体旋转（默认），正值向物体右侧偏转，负值向左；仅对准模式生效")]
+    [Range(-180f, 180f)]
+    [SerializeField]
+    private float zoneYawOffset = 0f;
+
     private Camera cachedCamera;
     private DialogueRunner dialogueRunner;
 
@@ -471,6 +476,26 @@ public class NPCDialogue : MonoBehaviour
         return owner == this;
     }
 
+    // 扇形区域的水平朝向：默认跟随挂载物体旋转，
+    // 再叠加检查器里设置的 zoneYawOffset 偏转。
+    // 物体朝向垂直于水平面时退化，兜底用世界前方。
+    private Vector3 GetZoneForward()
+    {
+        Vector3 forward = transform.forward;
+        forward.y = 0f;
+
+        if (forward.sqrMagnitude < 0.0001f)
+        {
+            forward = Vector3.forward;
+        }
+        else
+        {
+            forward.Normalize();
+        }
+
+        return Quaternion.AngleAxis(zoneYawOffset, Vector3.up) * forward;
+    }
+
     // 朝向限制（仅对准模式）：玩家必须站在 NPC 正前方
     // interactHalfAngle 度的扇形范围内。水平面计算，忽略高度差，
     // 避免玩家站得稍高/稍低时被误判到区域外。
@@ -481,11 +506,10 @@ public class NPCDialogue : MonoBehaviour
             return true;
         }
 
-        Vector3 npcForward = transform.forward;
+        Vector3 npcForward = GetZoneForward();
         Vector3 toPlayer =
             cachedCamera.transform.position - transform.position;
 
-        npcForward.y = 0f;
         toPlayer.y = 0f;
 
         // 水平投影接近零（玩家在正上/正下方）时方向未定义，
@@ -512,16 +536,9 @@ public class NPCDialogue : MonoBehaviour
             return;
         }
 
-        Vector3 forward = transform.forward;
-        forward.y = 0f;
-
-        // 根节点朝向垂直于水平面时退化，兜底用世界前方
-        if (forward.sqrMagnitude < 0.0001f)
-        {
-            forward = Vector3.forward;
-        }
-
-        forward.Normalize();
+        // 扇形朝向与运行时判定共用 GetZoneForward：
+        // 物体旋转 + 检查器偏转，保证预览与实际一致
+        Vector3 forward = GetZoneForward();
 
         float radius = Mathf.Max(0.5f, interactDistance);
         Vector3 center = transform.position;
