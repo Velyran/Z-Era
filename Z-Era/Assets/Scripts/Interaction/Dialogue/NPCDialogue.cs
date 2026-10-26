@@ -103,6 +103,24 @@ public class NPCDialogue : MonoBehaviour
     [SerializeField]
     private string nameRevealNodeId;
 
+    [Header("描边闪烁")]
+
+    [Tooltip("是否启用按标记条件描边闪烁；关闭后即使标记满足也不描边")]
+    [SerializeField]
+    private bool enableOutline = true;
+
+    [Tooltip("描边颜色（Alpha 作为呼吸最满时的不透明度）")]
+    [SerializeField]
+    private Color outlineColor = new Color(1f, 0.8f, 0f, 1f);
+
+    [Tooltip("该标记为 true 时开始描边闪烁；留空则永不自动开始")]
+    [SerializeField]
+    private string outlineStartFlag;
+
+    [Tooltip("该标记为 true 时停止描边闪烁；留空则不会自动停止")]
+    [SerializeField]
+    private string outlineStopFlag;
+
     [Header("朝向限制")]
 
     [Tooltip("是否要求玩家站在 NPC 朝向的指定角度范围内才能对话（防止绕到 NPC 背后对话）；仅\"对准目标按 E\"模式生效")]
@@ -147,6 +165,28 @@ public class NPCDialogue : MonoBehaviour
     // 触发一次（否则对话一结束立刻无限重开），玩家整体离开
     // 范围后复位，再次进入会重新触发。
     private bool firedThisVisit;
+
+    // 描边宽度（像素）、呼吸频率与渲染队列：
+    // 与 PickupController 的默认观感保持一致。
+    private const float OutlineWidth = 6f;
+    private const float OutlinePulseSpeed = 1.5f;
+    private const int OutlineRenderQueue = 2001;
+
+    // 当前是否已经挂上描边材质。
+    private bool outlineActive;
+
+    // 着色器缺失等无法描边的情况，置真后不再重试。
+    private bool outlineUnavailable;
+
+    // 本物体的描边材质（每组件独立，呼吸脉动互不影响）。
+    private Material outlineMaterial;
+
+    // 已挂描边的渲染器及其原始材质，用于还原。
+    private readonly List<Renderer> outlineRenderers =
+        new List<Renderer>();
+
+    private readonly Dictionary<Renderer, Material[]> outlineOriginals =
+        new Dictionary<Renderer, Material[]>();
 
     private void Awake()
     {
@@ -203,6 +243,12 @@ public class NPCDialogue : MonoBehaviour
         // 离开场景/禁用后重新启用：进出事件不会再补发，
         // 这里清空，避免残留"在范围内"的假状态
         insideColliders.Clear();
+
+        // 归还提示文本，避免禁用后仍占着文本、别人写不进去。
+        ReleasePrompt();
+
+        // 禁用时还原材质，避免残留描边。
+        SetOutlineActive(false);
     }
 
     // 触发器模式：记录进入本物体触发器（is Trigger）的匹配 Tag 碰撞体。
@@ -233,6 +279,8 @@ public class NPCDialogue : MonoBehaviour
     private void Update()
     {
         EnsureDialogueRunnerSubscription();
+
+        UpdateOutline();
 
         // 已发起的对话结束后：记录"聊过"并设置 talkedFlag。
         // 结束序列期间状态已是 Idle，标记会立即生效。
@@ -584,6 +632,175 @@ public class NPCDialogue : MonoBehaviour
 #endif
     }
 
+    // 按标记条件维护描边闪烁：起始标记为空时永不开启；
+    // 起始标记已设置且停止标记未设置时有描边，并按呼吸频率脉动。
+    private void UpdateOutline()
+    {
+        if (!enableOutline || outlineUnavailable)
+        {
+            SetOutlineActive(false);
+            return;
+        }
+
+        bool blinking =
+            !string.IsNullOrWhiteSpace(outlineStartFlag) &&
+            DialogueFlags.HasFlag(outlineStartFlag) &&
+            (string.IsNullOrWhiteSpace(outlineStopFlag) ||
+             !DialogueFlags.HasFlag(outlineStopFlag));
+
+        SetOutlineActive(blinking);
+
+        if (!blinking || outlineMaterial == null)
+        {
+            return;
+        }
+
+        float pulse =
+            Mathf.Sin(Time.time * OutlinePulseSpeed * Mathf.PI * 2f) *
+                0.5f + 0.5f;
+
+        Color color = outlineColor;
+        color.a *= pulse;
+        outlineMaterial.SetColor("_OutlineColor", color);
+    }
+
+    // 挂上/摘下描边材质；状态未变化时直接返回。
+    private void SetOutlineActive(bool active)
+    {
+        if (active == outlineActive)
+        {
+            return;
+        }
+
+        if (active)
+        {
+            ApplyOutline();
+        }
+        else
+        {
+            RemoveOutline();
+        }
+    }
+
+    private void ApplyOutline()
+    {
+        if (outlineMaterial == null)
+        {
+            outlineMaterial = CreateOutlineMaterial();
+
+            if (outlineMaterial == null)
+            {
+                // 着色器缺失：停止重试，避免每帧刷错误日志。
+                outlineUnavailable = true;
+                return;
+            }
+        }
+
+        foreach (
+            Renderer renderer in
+                GetComponentsInChildren<Renderer>(true)
+        )
+        {
+            // 粒子等渲染器不支持附加描边材质，跳过。
+            if (!(renderer is MeshRenderer) &&
+                !(renderer is SkinnedMeshRenderer))
+            {
+                continue;
+            }
+
+            Material[] originals = renderer.sharedMaterials;
+
+            var withOutline = new Material[originals.Length + 1];
+
+            for (int i = 0; i < originals.Length; i++)
+            {
+                withOutline[i] = originals[i];
+            }
+
+            withOutline[originals.Length] = outlineMaterial;
+
+            renderer.sharedMaterials = withOutline;
+
+            outlineOriginals[renderer] = originals;
+            outlineRenderers.Add(renderer);
+        }
+
+        outlineActive = true;
+    }
+
+    private void RemoveOutline()
+    {
+        foreach (Renderer renderer in outlineRenderers)
+        {
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            if (outlineOriginals.TryGetValue(
+                    renderer,
+                    out Material[] originals
+                ))
+            {
+                renderer.sharedMaterials = originals;
+            }
+        }
+
+        outlineRenderers.Clear();
+        outlineOriginals.Clear();
+        outlineActive = false;
+    }
+
+    private Material CreateOutlineMaterial()
+    {
+        Shader shader = Shader.Find("Custom/Item Outline");
+
+        if (shader == null)
+        {
+            Debug.LogError(
+                "NPCDialogue：找不到 Custom/Item Outline 着色器，无法描边。",
+                this
+            );
+
+            return null;
+        }
+
+        Material material = new Material(shader);
+        material.renderQueue = OutlineRenderQueue;
+        material.SetColor("_OutlineColor", outlineColor);
+        material.SetFloat("_OutlineWidth", OutlineWidth);
+
+        return material;
+    }
+
+    // 提示文本的当前占用者。多个 NPC 可能共用同一个提示文本
+    // （例如一个"对准按 E"的物体和一个"进入范围自动触发"的
+    // 触发器挂在同一个 HUD 文本上），而触发器模式每帧都会走到
+    // 清空提示的分支，不加占用标记就会把同一帧里别人写好的
+    // 提示擦掉，表现为"提示永远不显示"。
+    private static readonly Dictionary<TMP_Text, NPCDialogue>
+        promptOwners = new Dictionary<TMP_Text, NPCDialogue>();
+
+    // 当前提示文本是否由本组件占用。
+    private bool OwnsPrompt()
+    {
+        return promptText != null &&
+               promptOwners.TryGetValue(promptText, out NPCDialogue owner) &&
+               owner == this;
+    }
+
+    // 归还提示文本并清空，仅在确实由本组件占用时生效。
+    private void ReleasePrompt()
+    {
+        if (!OwnsPrompt())
+        {
+            return;
+        }
+
+        promptOwners.Remove(promptText);
+        promptText.text = string.Empty;
+    }
+
     private void UpdatePrompt(
         bool canInteract
     )
@@ -595,9 +812,12 @@ public class NPCDialogue : MonoBehaviour
 
         if (!canInteract)
         {
-            promptText.text = string.Empty;
+            // 不是当前占用者就不动别人正在显示的提示。
+            ReleasePrompt();
             return;
         }
+
+        promptOwners[promptText] = this;
 
         string activePrompt = hasIntroduced
             ? promptFormat

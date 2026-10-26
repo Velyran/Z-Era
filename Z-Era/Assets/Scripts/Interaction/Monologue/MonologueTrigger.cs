@@ -42,7 +42,10 @@ public class MonologueTrigger : MonoBehaviour
         MonologueUIController.Show(monologue);
     }
 
-    private bool PassesFlagConditions(MonologueAsset asset)
+    // 条件判定（资产内 Required/Forbidden 组合）：本组件与
+    // MonologueFlagRelay 共用这一份实现，保证两种挂载方式
+    // 的判定语义完全一致。
+    public static bool PassesFlagConditions(MonologueAsset asset)
     {
         if (asset.RequiredFlags != null)
         {

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2904c0d84713cc4a44aa91d5036d8294, type: 3}
+  m_Name: ch01_tk_01_talktoradio
+  m_EditorClassIdentifier: 
+  questId: ch01_tk_01
+  title: "\u4E0E\u5BF9\u8BB2\u673A\u53E6\u4E00\u8FB9\u7684\u4EBA\u53D6\u5F97\u8054\u7CFB"
+  description: "\u4E00\u65C1\u7684\u5BF9\u8BB2\u673A\u54CD\u4E86\uFF0C\u4F3C\u4E4E\u662F\u6709\u4EBA\u8054\u7CFB"
+  sceneName: 
+  objectives:
+  - objectiveId: ch01_tk_01_talktoradio
+    description: "\u67E5\u770B\u5BF9\u8BB2\u673A"
+    requiredAmount: 1
+  - objectiveId: ch01_tk_01_pickupgun
+    description: "\u6361\u8D77\u65C1\u8FB9\u7684\u67AA"
+    requiredAmount: 1
+  prerequisiteQuestIds: []
+  requiredFlags:
+  - ch01_tk_01_start
+  forbiddenFlags: []
+  flagsToSetOnAccept: []
+  flagsToSetOnComplete: []
+  onAccept:
+    m_PersistentCalls:
+      m_Calls: []
+  onComplete:
+    m_PersistentCalls:
+      m_Calls: []

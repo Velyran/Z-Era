@@ -5,8 +5,10 @@ using UnityEngine;
 /// <summary>
 /// 玩家自白 HUD：挂在 HUD Canvas 下的自白物体上（建议直接挂在
 /// 一个 TMP_Text 物体上，文本留空则自动取同物体/子物体上的组件）。
-/// 由 MonologueTrigger 通过 Show(asset) 调用：按资产配置摆好
-/// 屏幕位置，以打字机形式打印正文，停留指定时长后整体淡出。
+/// 由 MonologueTrigger 通过 Show(asset) 调用：以打字机形式逐段
+/// 打印自白（段数自定、按序播放，段间不淡入淡出、上一段立即
+/// 消失下一段立即出现，段间间隔可配），最后一段停留指定时长后
+/// 整体淡出。文本位置在场景中预先摆好，本脚本不再覆盖。
 /// 可见性只靠 CanvasGroup 透明度控制（缺省运行时自动添加），
 /// 物体常驻启用，保证 Instance 在场景加载后即可用。
 /// 打字、停留、淡出均使用未缩放时间，暂停面板打开时照常走完。
@@ -119,9 +121,9 @@ public class MonologueUIController : MonoBehaviour
             displayRoutine = null;
         }
 
-        ApplyLayout(asset);
-
-        monologueText.text = asset.Text;
+        // 屏幕位置不在这里设置（文本位置已在场景里固定），
+        // 文本内容与可见字符数由逐段播放循环接管
+        monologueText.text = string.Empty;
         monologueText.maxVisibleCharacters = 0;
         canvasGroup.alpha = 1f;
 
@@ -137,57 +139,70 @@ public class MonologueUIController : MonoBehaviour
         displayRoutine = StartCoroutine(DisplayRoutine(asset));
     }
 
-    // 把资产的屏幕位置配置套到文本的 RectTransform 上。
-    private void ApplyLayout(MonologueAsset asset)
-    {
-        RectTransform rect =
-            monologueText.rectTransform;
-
-        rect.anchorMin = asset.AnchorMin;
-        rect.anchorMax = asset.AnchorMax;
-        rect.pivot = asset.Pivot;
-        rect.anchoredPosition = asset.AnchoredPosition;
-        rect.sizeDelta = asset.SizeDelta;
-    }
-
     private IEnumerator DisplayRoutine(MonologueAsset asset)
     {
-        // 打字机：maxVisibleCharacters 只统计可见字符，
-        // 富文本标签不会被当作字符打印出来
-        //（与 DialogueUIController 相同的数法）。
-        string fullText = asset.Text;
-        int total = fullText.Length;
-        int revealed = 0;
-        float revealProgress = 0f;
+        string[] segments = asset.Segments;
+        int segmentCount =
+            segments != null ? segments.Length : 0;
 
-        while (revealed < total)
+        for (int index = 0; index < segmentCount; index++)
         {
-            revealProgress +=
-                asset.CharactersPerSecond * Time.unscaledDeltaTime;
+            string fullText = segments[index] ?? string.Empty;
 
-            int target = Mathf.Min(
-                total,
-                Mathf.FloorToInt(revealProgress)
-            );
+            // 打字机：maxVisibleCharacters 只统计可见字符，
+            // 富文本标签不会被当作字符打印出来
+            //（与 DialogueUIController 相同的数法）。
+            int total = fullText.Length;
+            int revealed = 0;
+            float revealProgress = 0f;
 
-            if (target > revealed)
+            monologueText.text = fullText;
+            monologueText.maxVisibleCharacters = 0;
+
+            while (revealed < total)
             {
-                monologueText.maxVisibleCharacters = target;
-                revealed = target;
+                revealProgress +=
+                    asset.CharactersPerSecond * Time.unscaledDeltaTime;
+
+                int target = Mathf.Min(
+                    total,
+                    Mathf.FloorToInt(revealProgress)
+                );
+
+                if (target > revealed)
+                {
+                    monologueText.maxVisibleCharacters = target;
+                    revealed = target;
+                }
+
+                yield return null;
             }
 
-            yield return null;
+            // 停留：本段打印完毕后保持完整显示。
+            float holdEnd = Time.unscaledTime + asset.HoldDuration;
+
+            while (Time.unscaledTime < holdEnd)
+            {
+                yield return null;
+            }
+
+            // 段间切换（非末段）：不淡入淡出——文字立即消失，
+            // 间隔结束后下一段立即出现（回到循环顶部重新打字）
+            if (index < segmentCount - 1)
+            {
+                monologueText.text = string.Empty;
+                monologueText.maxVisibleCharacters = 0;
+
+                if (asset.SegmentInterval > 0f)
+                {
+                    yield return new WaitForSecondsRealtime(
+                        asset.SegmentInterval
+                    );
+                }
+            }
         }
 
-        // 停留：打印完毕后保持完整显示。
-        float holdEnd = Time.unscaledTime + asset.HoldDuration;
-
-        while (Time.unscaledTime < holdEnd)
-        {
-            yield return null;
-        }
-
-        // 淡出：透明度整体渐变到 0 后清空文本。
+        // 全部段播完后整体淡出：透明度渐变到 0 后清空文本。
         float fadeDuration = asset.FadeDuration;
 
         if (fadeDuration > 0f)

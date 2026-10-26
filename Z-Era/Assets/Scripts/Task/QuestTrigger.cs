@@ -4,9 +4,11 @@ using UnityEngine.Events;
 
 /// <summary>
 /// 通用任务触发器：无需写代码即可接取任务或上报目标进度。
-/// 两种激活方式：
+/// 三种激活方式：
 /// - OnTriggerEnter：玩家进入本物体的触发器碰撞体（需要 is Trigger）；
-/// - OnInteract：准星指向本物体碰撞体且在交互距离内，按下交互键。
+/// - OnInteract：准星指向本物体碰撞体且在交互距离内，按下交互键；
+/// - OnFlagSet：requiredFlags 全部置位的那一刻直接触发，
+///   用于"对话结束后立刻接取任务"这类不需要玩家走动的场合。
 /// 两种模式：
 /// - StartQuest：接取配置的任务资产；
 /// - AddProgress：为指定任务目标累计进度。
@@ -23,7 +25,10 @@ public class QuestTrigger : MonoBehaviour
     public enum Activation
     {
         OnTriggerEnter,
-        OnInteract
+        OnInteract,
+
+        // requiredFlags 全部置位的那一刻直接触发，无需进入或交互。
+        OnFlagSet
     }
 
     [Header("触发模式")]
@@ -179,6 +184,71 @@ public class QuestTrigger : MonoBehaviour
         {
             UpdatePrompt(false);
         }
+    }
+
+    private void OnEnable()
+    {
+        if (activation != Activation.OnFlagSet)
+        {
+            return;
+        }
+
+        if (requiredFlags == null || requiredFlags.Length == 0)
+        {
+            Debug.LogWarning(
+                "QuestTrigger：OnFlagSet 模式需要至少一个 Required Flag，" +
+                    "当前为空，不会触发。",
+                this
+            );
+
+            return;
+        }
+
+        DialogueFlags.FlagSet += OnDialogueFlagSet;
+
+        // 启用前标记就已满足（例如本物体晚于标记置位才启用）时
+        // 立刻补一次，避免漏触发。
+        if (AllRequiredFlagsSet())
+        {
+            Fire();
+        }
+    }
+
+    private void OnDisable()
+    {
+        DialogueFlags.FlagSet -= OnDialogueFlagSet;
+    }
+
+    private void OnDialogueFlagSet(string flagName)
+    {
+        if (triggerOnce && fired)
+        {
+            return;
+        }
+
+        if (AllRequiredFlagsSet())
+        {
+            Fire();
+        }
+    }
+
+    // requiredFlags 是否全部已设置；空配置视为不满足。
+    private bool AllRequiredFlagsSet()
+    {
+        if (requiredFlags == null || requiredFlags.Length == 0)
+        {
+            return false;
+        }
+
+        foreach (string flag in requiredFlags)
+        {
+            if (!DialogueFlags.HasFlag(flag))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private bool CanInteract()

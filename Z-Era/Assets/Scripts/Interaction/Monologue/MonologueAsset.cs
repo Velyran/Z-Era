@@ -1,10 +1,12 @@
 using UnityEngine;
 
 /// <summary>
-/// 一段玩家自白的数据资产，在 Project 窗口右键 Create > Dialogue >
-/// Monologue Asset 创建。由 MonologueTrigger 监听对话标记
-/// （DialogueFlags）触发，条件通过时交给 HUD 上的
+/// 玩家自白的数据资产，在 Project 窗口右键 Create > Dialogue >
+/// Monologue Asset 创建。可配置自定义段数的文本，按数组顺序逐段
+/// 播放（段间不淡入淡出，直接切换）；由 MonologueTrigger 监听
+/// 对话标记（DialogueFlags）触发，条件通过时交给 HUD 上的
 /// MonologueUIController 以打字机形式显示。
+/// 文本的屏幕位置不在资产里配置（场景中已单独摆好）。
 /// </summary>
 [CreateAssetMenu(
     menuName = "Dialogue/Monologue Asset",
@@ -15,46 +17,30 @@ public class MonologueAsset : ScriptableObject
     [Header("自白内容")]
 
     [TextArea(3, 10)]
-    [Tooltip("自白正文，支持 TMP 富文本")]
+    [Tooltip("自白段落（段数自定）：按数组顺序逐段播放，支持 TMP 富文本。" +
+        "段与段之间不淡入淡出：上一段立即消失，间隔结束后下一段立即出现")]
     [SerializeField]
-    private string text;
+    private string[] segments = new string[1];
 
     [Tooltip("打字速度（每秒字符数）")]
     [Min(1f)]
     [SerializeField]
     private float charactersPerSecond = 20f;
 
-    [Tooltip("正文打印完毕后的停留时长（秒），随后开始淡出")]
+    [Tooltip("每段打印完毕后的停留时长（秒）：非末段随后进入段间间隔，最后一段随后整体淡出")]
     [Min(0f)]
     [SerializeField]
     private float holdDuration = 2f;
 
-    [Tooltip("淡出时长（秒），0 表示停留结束后立即消失")]
+    [Tooltip("淡出时长（秒），0 表示最后一段停留结束后立即消失")]
     [Min(0f)]
     [SerializeField]
     private float fadeDuration = 1f;
 
-    [Header("屏幕位置")]
-
-    [Tooltip("锚点最小值，与最大值相等即点锚，不等即拉伸")]
+    [Tooltip("段与段之间的播放间隔（秒）：上一段停留结束后文字立即消失，间隔结束后下一段立即出现")]
+    [Min(0f)]
     [SerializeField]
-    private Vector2 anchorMin = new Vector2(0.5f, 0.5f);
-
-    [Tooltip("锚点最大值")]
-    [SerializeField]
-    private Vector2 anchorMax = new Vector2(0.5f, 0.5f);
-
-    [Tooltip("轴心")]
-    [SerializeField]
-    private Vector2 pivot = new Vector2(0.5f, 0.5f);
-
-    [Tooltip("相对锚点的位置偏移")]
-    [SerializeField]
-    private Vector2 anchoredPosition = new Vector2(0f, -180f);
-
-    [Tooltip("尺寸（点锚下为宽高；拉伸锚下为边距）")]
-    [SerializeField]
-    private Vector2 sizeDelta = new Vector2(900f, 200f);
+    private float segmentInterval = 0.5f;
 
     [Header("触发条件（全部满足才触发）")]
 
@@ -72,15 +58,11 @@ public class MonologueAsset : ScriptableObject
     [SerializeField]
     private string[] flagsToSetOnShown;
 
-    public string Text => text;
+    public string[] Segments => segments;
     public float CharactersPerSecond => charactersPerSecond;
     public float HoldDuration => holdDuration;
     public float FadeDuration => fadeDuration;
-    public Vector2 AnchorMin => anchorMin;
-    public Vector2 AnchorMax => anchorMax;
-    public Vector2 Pivot => pivot;
-    public Vector2 AnchoredPosition => anchoredPosition;
-    public Vector2 SizeDelta => sizeDelta;
+    public float SegmentInterval => segmentInterval;
     public string[] RequiredFlags => requiredFlags;
     public string[] ForbiddenFlags => forbiddenFlags;
     public string[] FlagsToSetOnShown => flagsToSetOnShown;

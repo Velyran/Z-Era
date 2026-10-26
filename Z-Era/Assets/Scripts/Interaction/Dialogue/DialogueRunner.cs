@@ -229,6 +229,10 @@ public class DialogueRunner : MonoBehaviour
 
         asset = dialogueAsset;
 
+        // 开始标记属于对话资产本身：对话真正开始时置位
+        // （重复开始、资产为空等被拦下的情况不会走到这里）。
+        asset.ApplyStartFlag();
+
         DialogueAsset.DialogueNode startNode =
             asset.GetNode(asset.StartNodeId);
 
@@ -591,6 +595,13 @@ public class DialogueRunner : MonoBehaviour
 
     private void EndDialogue()
     {
+        // 结束标记属于对话资产本身：走完最后一句（含选项跳转结束）
+        // 时置位，中途被打断不会走到这里。
+        if (asset != null)
+        {
+            asset.ApplyEndFlag();
+        }
+
         CurrentState = State.Idle;
         asset = null;
         currentNode = null;

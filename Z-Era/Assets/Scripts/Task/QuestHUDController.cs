@@ -99,6 +99,11 @@ public class QuestHUDController : MonoBehaviour
 
     private QuestAsset displayedQuest;
 
+    // 上次刷新指引文本时显示的目标，用于重新启用时判断
+    // "禁用以来的目标完成"（对话期间 HUD 被整体禁用，
+    // ObjectiveUpdated 广播收不到，只能靠对账补播）。
+    private QuestAsset.QuestObjective displayedObjective;
+
     // 完成序列播放期间接取的新任务在此排队，
     // 序列收尾后自动切换显示，避免打断勾的填充演出。
     private QuestAsset pendingQuest;
@@ -251,6 +256,30 @@ public class QuestHUDController : MonoBehaviour
 
         if (displayedQuest != null)
         {
+            // 对话期间 HUD 被整体禁用，单个目标完成的广播也收不到：
+            // 当前显示的目标若已在这段时间达标（且整任务未完成，
+            // 那种情况走上面的分支），补播一次目标完成演出。
+            if (displayedObjective != null &&
+                QuestManager.GetObjectiveCurrent(
+                    displayedQuest.QuestId,
+                    displayedObjective.objectiveId
+                ) >= displayedObjective.requiredAmount)
+            {
+                RefreshGuideText(
+                    displayedObjective,
+                    displayedObjective.requiredAmount
+                );
+
+                SetGuideTextColor(completionTextColor);
+                SetRowAlphaImmediate(1f);
+
+                activeAnimation = StartCoroutine(
+                    ObjectiveCompletedSequence()
+                );
+
+                return;
+            }
+
             // 任务仍在进行中：刷新对话期间错过的进度。
             RefreshDisplay();
             SetGuideTextColor(guideBaseColor);
@@ -440,35 +469,6 @@ public class QuestHUDController : MonoBehaviour
             return;
         }
 
-        // 临时诊断：完成瞬间的进度快照与文本内容，确认后删除
-        string snapshot = "";
-
-        foreach (
-            QuestAsset.QuestObjective objective
-                in quest.Objectives
-        )
-        {
-            if (objective == null)
-            {
-                continue;
-            }
-
-            snapshot += objective.objectiveId + "=" +
-                QuestManager.GetObjectiveCurrent(
-                    quest.QuestId,
-                    objective.objectiveId
-                ) + "/" + objective.requiredAmount + " ";
-        }
-
-        Debug.Log(
-            "[QuestHUD 诊断] 任务完成：" + quest.QuestId +
-            " [" + snapshot + "]" +
-            "，完成时文本=" + (guideText != null
-                ? guideText.text
-                : "null"),
-            this
-        );
-
         // 文本刷新为完成态（显示最后一个目标），变绿，圆环充满。
         RefreshDisplay();
         SetGuideTextColor(completionTextColor);
@@ -529,6 +529,7 @@ public class QuestHUDController : MonoBehaviour
         yield return FadeRow(0f, fadeOutDuration);
 
         displayedQuest = null;
+        displayedObjective = null;
 
         HideCheck();
 
@@ -648,6 +649,8 @@ public class QuestHUDController : MonoBehaviour
 
         if (shownObjective == null)
         {
+            displayedObjective = null;
+
             if (guideText != null)
             {
                 guideText.text = string.Empty;
@@ -660,6 +663,8 @@ public class QuestHUDController : MonoBehaviour
             displayedQuest.QuestId,
             shownObjective.objectiveId
         );
+
+        displayedObjective = shownObjective;
 
         if (guideText != null)
         {

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7735a702022844a4ab02a9f6c34da2b9, type: 3}
+  m_Name: mono_01
+  m_EditorClassIdentifier: 
+  segments:
+  - "\u4E00\u628A\u683C\u6D1B\u514B\uFF0C\u4F46\u53EA\u670940\u53D1\u5F39\u836F\uFF0C\u6216\u8BB8\u80FD\u5728\u4EC0\u4E48\u5730\u65B9\u627E\u5230\u5F39\u836F\u3002"
+  - "\u5BF9\u8BB2\u673A\u90A3\u8FB9\u7684\u4EBA\u8BA9\u6211\u62FF\u67AA\u6765\u9632\u8EAB\u662F\u4EC0\u4E48\u610F\u601D\uFF0C\u96BE\u9053\u7070\u6E2F\u6709\u5371\u9669\uFF1F"
+  - "\u4E0D\u7BA1\u600E\u4E48\u8BF4\uFF0C\u5148\u4E0B\u6865\u53BB\u627E\u5230\u5BF9\u8BB2\u673A\u90A3\u8FB9\u7684\u4EBA\uFF0C\u6216\u8BB8\u4ED6\u77E5\u9053\u5927\u90E8\u961F\u7684\u53BB\u5411\u3002"
+  charactersPerSecond: 20
+  holdDuration: 2
+  fadeDuration: 1
+  segmentInterval: 0.5
+  requiredFlags:
+  - ch01_tk_01_pickupglock
+  forbiddenFlags: []
+  flagsToSetOnShown: []

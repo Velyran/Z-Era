@@ -5162,12 +5162,19 @@ MonoBehaviour:
   playOnce: 0
   interactKey: 101
   interactDistance: 1.5
+  triggerMode: 0
+  triggerTag: Player
   promptText: {fileID: 1865730779}
   promptFormat: "\u54C8\u73C0"
   unknownPrompt: "\uFF1F\uFF1F\uFF1F"
   nameRevealNodeId: harper_03
+  enableOutline: 1
+  outlineColor: {r: 1, g: 0.8, b: 0, a: 1}
+  outlineStartFlag: 
+  outlineStopFlag: 
   requireForwardZone: 1
   interactHalfAngle: 15
+  zoneYawOffset: 0
 --- !u!1 &321843429
 GameObject:
   m_ObjectHideFlags: 0
@@ -9710,6 +9717,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_FillAmount
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2319045679554034850, guid: 5b13204f7d2fc51438d48e4a92fbe080,
+        type: 3}
+      propertyPath: m_text
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 2319045679554034850, guid: 5b13204f7d2fc51438d48e4a92fbe080,
         type: 3}

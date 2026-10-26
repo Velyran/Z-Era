@@ -60,12 +60,48 @@ public class DialogueAsset : ScriptableObject
     [SerializeField]
     private string startNodeId;
 
+    [Tooltip("对话开始时设置的全局标记，留空则不设置")]
+    [SerializeField]
+    private string startFlag;
+
+    [Tooltip("最后一句对话结束后设置的全局标记，留空则不设置")]
+    [SerializeField]
+    private string endFlag;
+
     [SerializeField]
     private List<DialogueNode> nodes = new List<DialogueNode>();
 
     public IReadOnlyList<DialogueNode> Nodes => nodes;
 
     public string StartNodeId => startNodeId;
+
+    public string StartFlag => startFlag;
+
+    public string EndFlag => endFlag;
+
+    // 对话开始时由 DialogueRunner 调用：把 startFlag 置为 true。
+    // 未填写标记时不做任何事。
+    public void ApplyStartFlag()
+    {
+        if (string.IsNullOrWhiteSpace(startFlag))
+        {
+            return;
+        }
+
+        DialogueFlags.SetFlag(startFlag, true);
+    }
+
+    // 对话完整结束时由 DialogueRunner 调用：把 endFlag 置为 true。
+    // 未填写标记时不做任何事；中途被打断的对话不会调用到这里。
+    public void ApplyEndFlag()
+    {
+        if (string.IsNullOrWhiteSpace(endFlag))
+        {
+            return;
+        }
+
+        DialogueFlags.SetFlag(endFlag, true);
+    }
 
     // 按 id 查找节点，找不到返回 null。
     public DialogueNode GetNode(string nodeId)
@@ -101,6 +137,8 @@ public class DialogueAsset : ScriptableObject
 
     private void OnValidate()
     {
+        NormalizeSpeakerColors();
+
         // 提示重复的节点 id：重复 id 会让跳转目标指向错误节点。
         for (int i = 0; i < nodes.Count; i++)
         {
@@ -120,6 +158,32 @@ public class DialogueAsset : ScriptableObject
                         this
                     );
                 }
+            }
+        }
+    }
+
+    // 把"白色但完全透明"的说话人颜色补成纯白。
+    // 点击节点列表的加号新增节点时，取色器的 Alpha 滑条容易
+    // 停在 0，得到 (1,1,1,0)；显示时虽然会被强制拉回不透明，
+    // 但在检查器里看着像没赋值。只处理 RGB 已经是白色的情况，
+    // 手工调过的其他颜色不动。
+    private void NormalizeSpeakerColors()
+    {
+        foreach (DialogueNode node in nodes)
+        {
+            if (node == null)
+            {
+                continue;
+            }
+
+            Color color = node.speakerColor;
+
+            if (color.a <= 0f &&
+                Mathf.Approximately(color.r, 1f) &&
+                Mathf.Approximately(color.g, 1f) &&
+                Mathf.Approximately(color.b, 1f))
+            {
+                node.speakerColor = Color.white;
             }
         }
     }
