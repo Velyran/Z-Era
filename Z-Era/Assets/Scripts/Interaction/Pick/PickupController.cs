@@ -170,7 +170,10 @@ public class PickupController : MonoBehaviour
             float sqrDistance =
                 (item.transform.position - origin).sqrMagnitude;
 
-            if (sqrDistance <= maxSqrDistance)
+            // Magazine 分类要求库存中已有对应武器才高亮（可用性
+            // 会在武器入包后由下方的撤销循环动态补挂/移除描边）
+            if (sqrDistance <= maxSqrDistance &&
+                item.IsAvailable(InventoryContainer))
             {
                 ApplyOutline(item);
                 highlightedItems.Add(item);
@@ -186,6 +189,7 @@ public class PickupController : MonoBehaviour
         {
             if (item == null ||
                 !PickableItem.IsRegistered(item) ||
+                !item.IsAvailable(InventoryContainer) ||
                 (item.transform.position - origin).sqrMagnitude >
                     maxSqrDistance)
             {
@@ -245,7 +249,10 @@ public class PickupController : MonoBehaviour
                 ? pickable.interactionDistanceOverride
                 : this.interactDistance;
 
-        return hit.distance <= interactDistance;
+        // 距离与分类可用性（Magazine 须库存中已有对应武器）双门槛：
+        // 不可用时不出提示、按键也不会进入拾取
+        return hit.distance <= interactDistance &&
+               pickable.IsAvailable(InventoryContainer);
     }
 
     private void PickupItem(PickableItem item)
@@ -268,9 +275,9 @@ public class PickupController : MonoBehaviour
                 break;
 
             case PickupCategory.Magazine:
-                // 弹匣：按枪支名称索引补满对应武器弹药，
-                // 不进背包，拾取后本体消失。
-                RefillWeaponForMagazine(item);
+                // 弹匣：按枪支名称索引对应武器，把弹药数加进备弹
+                //（不补满），不进背包，拾取后本体消失。
+                AddAmmoForMagazine(item);
                 Destroy(item.gameObject);
                 break;
 
@@ -288,6 +295,11 @@ public class PickupController : MonoBehaviour
             );
         }
     }
+
+    // 库存容器（InventoryContainer）：拾取物入包的父物体，
+    // Magazine 的可用性判定也查它下面的子物体。
+    private Transform InventoryContainer =>
+        radialView != null ? radialView.transform : null;
 
     // 道具/武器/特殊收集品共用的入包流程。
     private void MoveItemToInventory(PickableItem item)
@@ -358,9 +370,10 @@ public class PickupController : MonoBehaviour
         }
     }
 
-    // 弹匣：按枪支名称索引补满对应武器；先精确匹配物体名，
-    // 未命中再退化为包含匹配，仍找不到则告警丢弃。
-    private void RefillWeaponForMagazine(PickableItem item)
+    // 弹匣：把拾取物配置的弹药数加到对应武器的备弹（不补满）；
+    // 先精确匹配物体名，未命中再退化为包含匹配，仍找不到则告警
+    // 丢弃。超出备弹上限的部分由 WeaponController 每帧 HandleAmmo 钳掉。
+    private void AddAmmoForMagazine(PickableItem item)
     {
         string weaponName = item.ResolveMagazineWeaponName();
 
@@ -370,7 +383,7 @@ public class PickupController : MonoBehaviour
         {
             if (weapon.gameObject.name == weaponName)
             {
-                weapon.RefillAmmo();
+                weapon.currentCarriedAmmo += item.MagazineAmmo;
                 return;
             }
         }
@@ -381,7 +394,7 @@ public class PickupController : MonoBehaviour
         {
             if (weapon.gameObject.name.Contains(weaponName))
             {
-                weapon.RefillAmmo();
+                weapon.currentCarriedAmmo += item.MagazineAmmo;
                 return;
             }
         }
@@ -531,37 +544,32 @@ public class PickupController : MonoBehaviour
             return;
         }
 
+        // 提示只显示可拾取物体的名称，优先级：
+        // PickableItem 单独配置的显示名（可按实例区分）→
+        // InventoryItemInfo 的显示名 → 物体名；
+        // 不再带"按 E ……"等操作前缀，弹药箱剩余次数、
+        // 弹匣补充对象等附加说明也随前缀一并移除
+        if (item != null &&
+            !string.IsNullOrWhiteSpace(item.DisplayName))
+        {
+            promptText.text = item.DisplayName;
+            return;
+        }
+
         InventoryItemInfo info =
             item != null
                 ? item.GetComponent<InventoryItemInfo>()
                 : null;
 
-        string itemName =
-            info != null ? info.displayName : null;
-
-        // 提示文案按分类区分：弹药箱与弹匣是补给交互而非入包。
-        switch (item.category)
+        if (info != null &&
+            !string.IsNullOrWhiteSpace(info.displayName))
         {
-            case PickupCategory.AmmoBox:
-                promptText.text = item.unlimitedInteractions
-                    ? "按 E 补充所有武器弹药"
-                    : "按 E 补充所有武器弹药（剩余 " +
-                        item.RemainingInteractions + " 次）";
-                break;
-
-            case PickupCategory.Magazine:
-                promptText.text =
-                    "按 E 拾取弹匣：补充 " +
-                    item.ResolveMagazineWeaponName() +
-                    " 的弹药";
-                break;
-
-            default:
-                promptText.text =
-                    string.IsNullOrWhiteSpace(itemName)
-                        ? "按 E 拾取"
-                        : "按 E 拾取：" + itemName;
-                break;
+            promptText.text = info.displayName;
+        }
+        else
+        {
+            promptText.text =
+                item != null ? item.gameObject.name : string.Empty;
         }
     }
 

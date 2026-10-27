@@ -23,6 +23,9 @@ MonoBehaviour:
   - objectiveId: ch01_tk_01_pickupgun
     description: "\u6361\u8D77\u65C1\u8FB9\u7684\u67AA"
     requiredAmount: 1
+  - objectiveId: ch01_tk_01_downbridge
+    description: "\u4E0B\u6865\u53BB\u5BFB\u627E\u5BF9\u8BB2\u673A\u53E6\u4E00\u8FB9\u7684\u4EBA"
+    requiredAmount: 1
   prerequisiteQuestIds: []
   requiredFlags:
   - ch01_tk_01_start

@@ -907,6 +907,38 @@ public class DialogueRunner : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 供外部演出（如任务运镜）复用对话的"锁操作 + 隐藏 HUD"逻辑。
+    /// 对话进行中或场景里没有 DialogueRunner 时返回 false，
+    /// 调用方自行决定是否继续。
+    /// </summary>
+    public static bool TryLockGameplay()
+    {
+        if (Instance == null ||
+            Instance.CurrentState != State.Idle ||
+            Instance.endingDialogue)
+        {
+            return false;
+        }
+
+        Instance.LockGameplay();
+
+        return true;
+    }
+
+    /// <summary>
+    /// 与 TryLockGameplay 配对调用：恢复玩家操作、HUD 与鼠标状态。
+    /// </summary>
+    public static void UnlockGameplay()
+    {
+        if (Instance == null)
+        {
+            return;
+        }
+
+        Instance.RestoreGameplay();
+    }
+
     private void OnDisable()
     {
         // 画布被外部禁用（例如切场景）时兜底恢复控制，

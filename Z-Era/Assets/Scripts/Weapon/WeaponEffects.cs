@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -306,10 +306,16 @@ public class WeaponEffects : MonoBehaviour
 
         Vector3 targetPoint;
 
+        // 瞄准射线跳过子弹可穿透的图层（如 AirWall）：
+        // 否则会把墙面当成瞄准点，子弹穿过墙后弹道整体偏移。
+        int aimMask =
+            Physics.DefaultRaycastLayers & ~BulletIgnoreLayers.Mask;
+
         if (Physics.Raycast(
             ray,
             out RaycastHit hit,
-            100f
+            100f,
+            aimMask
         ))
         {
             targetPoint = hit.point;

@@ -17,8 +17,8 @@ public enum PickupCategory
     // 所有武器的弹药，描边红色。分可交互指定次数与无限交互两种。
     AmmoBox,
 
-    // 弹匣：拾取后不进背包但本体消失，按枪支名称索引补满
-    // 对应武器的弹药，描边红色。
+    // 弹匣：拾取后不进背包但本体消失，按枪支名称索引对应武器，
+    // 把弹药数加进备弹（不补满），描边红色。
     Magazine,
 
     // 特殊收集品：后续规划，拾取后进入背包可查看，描边金色。
@@ -44,6 +44,19 @@ public class PickableItem : MonoBehaviour
     [Tooltip("覆盖全局的单件交互距离（米），0 表示使用 PickupController 的默认交互距离")]
     public float interactionDistanceOverride;
 
+    [Header("显示")]
+
+    [Tooltip("瞄准该物体时在交互提示里显示的物品名；留空则回退到 InventoryItemInfo 的显示名，再回退到物体名")]
+    [SerializeField]
+    private string displayName;
+
+    // 瞄准该物体时显示的物品名，供 PickupController 读取；
+    // 未配置时为空串，由调用方决定回退。
+    public string DisplayName
+    {
+        get { return displayName; }
+    }
+
     [Header("库存设置（分类为进背包的类型时生效：道具/武器/特殊收集品）")]
 
     [Tooltip("进库存时写入的初始旋转（欧拉角，相对背包容器）。默认值即原全局写死的 (0, -90, -90)，不改则表现与从前一致")]
@@ -62,6 +75,11 @@ public class PickableItem : MonoBehaviour
 
     [Tooltip("补充哪把武器的弹药，按玩家身上武器物体名称索引（如 Vector）；留空则从弹匣物体名称中推断（名称含枪支名即可，如 Vector_Magazine）")]
     public string weaponName;
+
+    [Tooltip("弹药数（仅分类为 Magazine 时生效）：拾取后把该数量加到对应武器的备弹（不进背包、不直接补满；超出备弹上限的部分由武器每帧钳掉）")]
+    [Min(0)]
+    [SerializeField]
+    private int magazineAmmo;
 
     [Header("拾取效果")]
 
@@ -92,6 +110,12 @@ public class PickableItem : MonoBehaviour
         get { return remainingInteractions; }
     }
 
+    // 弹匣拾取时加进备弹的弹药数（仅 Magazine 分类生效）。
+    public int MagazineAmmo
+    {
+        get { return magazineAmmo; }
+    }
+
     private int remainingInteractions;
 
     // 各分类的描边颜色（Alpha 为呼吸最满时的不透明度）。
@@ -111,6 +135,21 @@ public class PickableItem : MonoBehaviour
                 default:
                     return new Color(0f, 1f, 0.4f, 1f);
             }
+        }
+    }
+
+    // 分类为 Magazine 但弹药数为 0：拾取将不增加任何备弹，
+    // 在检查器里直接告警提示补填，不等拾取时才发现
+    private void OnValidate()
+    {
+        if (category == PickupCategory.Magazine &&
+            magazineAmmo <= 0)
+        {
+            Debug.LogWarning(
+                "PickableItem：分类为 Magazine 但 Magazine Ammo 为 0，" +
+                    "拾取后不会增加任何备弹。",
+                this
+            );
         }
     }
 
@@ -177,6 +216,39 @@ public class PickableItem : MonoBehaviour
         }
 
         return selfName;
+    }
+
+    // 当前是否可被交互（高亮与拾取共用的门槛）：
+    // 非 Magazine 分类恒可用；Magazine 只有库存容器
+    // （InventoryContainer）下已存在与本弹匣对应（名称匹配规则与
+    // weaponName 字段一致：解析出的武器名与子物体名精确相等，或
+    // 子物体名包含该武器名）的武器时才可用——容器缺失（场景没有
+    // 库存系统）或武器尚未入包时一律不可用。
+    public bool IsAvailable(Transform inventoryContainer)
+    {
+        if (category != PickupCategory.Magazine)
+        {
+            return true;
+        }
+
+        if (inventoryContainer == null)
+        {
+            return false;
+        }
+
+        string weaponName = ResolveMagazineWeaponName();
+
+        foreach (Transform child in inventoryContainer)
+        {
+            if (child != null &&
+                (child.name == weaponName ||
+                 child.name.Contains(weaponName)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // 由 PickupController 在拾取成功时调用。

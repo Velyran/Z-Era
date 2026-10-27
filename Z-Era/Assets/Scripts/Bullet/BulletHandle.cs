@@ -88,6 +88,14 @@ public class BulletHandle : MonoBehaviour
             );
         }
 
+        // 免子弹碰撞图层（如 AirWall）：物理层间碰撞已由
+        // BulletIgnoreLayers 在启动时关闭，这里再把它们从命中
+        // 射线掩码里剔除，否则子弹仍会停在表面并留弹孔。
+        if (BulletIgnoreLayers.Mask != 0)
+        {
+            hitLayerMask &= ~BulletIgnoreLayers.Mask;
+        }
+
         // Player/Weapon 图层子弹完全无碰撞直接穿过：
         // 射线检测已排除这两层，物理碰撞也一并关掉。
         // 出膛瞬间子弹碰撞体贴着玩家 CharacterController 与
