@@ -27,6 +27,10 @@ public class QuestAsset : ScriptableObject
         [Tooltip("完成该目标需要的次数")]
         [Min(1)]
         public int requiredAmount = 1;
+
+        [Tooltip("选填：该对话标记被设置时本目标直接完成；" +
+            "留空则只按进度上报完成")]
+        public string completeFlag;
     }
 
     [Header("任务信息")]

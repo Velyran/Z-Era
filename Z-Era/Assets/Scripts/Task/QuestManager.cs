@@ -88,6 +88,55 @@ public class QuestManager : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        DialogueFlags.FlagSet += OnDialogueFlagSet;
+    }
+
+    private void OnDisable()
+    {
+        DialogueFlags.FlagSet -= OnDialogueFlagSet;
+    }
+
+    // 目标的 completeFlag 被设置时，直接把该目标置为完成。
+    private void OnDialogueFlagSet(string flagName)
+    {
+        if (string.IsNullOrWhiteSpace(flagName) ||
+            activeQuestOrder.Count == 0)
+        {
+            return;
+        }
+
+        // 先取快照：置为完成可能立即结束任务并改动 activeQuestOrder。
+        List<QuestAsset> activeSnapshot =
+            new List<QuestAsset>(activeQuestOrder);
+
+        foreach (QuestAsset asset in activeSnapshot)
+        {
+            if (asset == null)
+            {
+                continue;
+            }
+
+            foreach (
+                QuestAsset.QuestObjective objective in asset.Objectives
+            )
+            {
+                if (objective == null ||
+                    string.IsNullOrWhiteSpace(objective.completeFlag) ||
+                    objective.completeFlag != flagName)
+                {
+                    continue;
+                }
+
+                SetObjectiveComplete(
+                    asset.QuestId,
+                    objective.objectiveId
+                );
+            }
+        }
+    }
+
     /// <summary>
     /// 清空全部任务状态与目标进度：回到主菜单、准备重新游玩关卡时调用。
     /// 只重置任务系统自身的数据，不触碰对话标记（由 DialogueFlags 负责）。
@@ -279,6 +328,12 @@ public class QuestManager : MonoBehaviour
             return;
         }
 
+        // 目标按列表顺序解锁：前面的目标没达标时，后面的进度忽略。
+        if (!IsObjectiveUnlocked(asset, objective))
+        {
+            return;
+        }
+
         string key = ProgressKey(questId, objectiveId);
 
         int previous = manager.objectiveProgress.TryGetValue(
@@ -363,6 +418,12 @@ public class QuestManager : MonoBehaviour
             return;
         }
 
+        // 目标按列表顺序解锁：前面的目标没达标时，后面的进度忽略。
+        if (!IsObjectiveUnlocked(asset, objective))
+        {
+            return;
+        }
+
         string key = ProgressKey(questId, objectiveId);
 
         int previous = manager.objectiveProgress.TryGetValue(
@@ -433,6 +494,37 @@ public class QuestManager : MonoBehaviour
             objectiveId,
             objective.requiredAmount - current
         );
+    }
+
+    // 目标是否已轮到：列表中排在它之前的目标全部达标才算解锁。
+    // 任务按单线顺序推进，跳过前面的目标不应计入进度，
+    // 否则会提前播放目标完成/任务完成的表现。
+    private static bool IsObjectiveUnlocked(
+        QuestAsset asset,
+        QuestAsset.QuestObjective objective
+    )
+    {
+        foreach (
+            QuestAsset.QuestObjective other in asset.Objectives
+        )
+        {
+            if (other == null || other == objective)
+            {
+                return true;
+            }
+
+            int current = GetObjectiveCurrent(
+                asset.QuestId,
+                other.objectiveId
+            );
+
+            if (current < other.requiredAmount)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // 全部目标达标时完成任务：写入完成标记并广播。

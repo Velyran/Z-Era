@@ -1,0 +1,5 @@
+ch01_task01_cfg
+→（1）ch01_dia_player_01_monologue - End Flag - ch01_tk_01_start（开场自白结束，触发对讲机闪烁与可对话）
+→（2）ch01_dia_william_01_radio - ch01_tk_01_talktoradio（对话结束完成ch01_tk_01_talktoradio，格洛克可拾取）
+→（3）Glock - ch01_tk_01_pickupglock - ch01_tk_01_pickupgun（拾取格洛克后弹匣可拾取，完成ch01_tk_01_pickupgun）
+→（4）

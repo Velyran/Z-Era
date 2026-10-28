@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2904c0d84713cc4a44aa91d5036d8294, type: 3}
-  m_Name: ch01_tk_01_talktoradio
+  m_Name: ch01_tk_01
   m_EditorClassIdentifier: 
   questId: ch01_tk_01
   title: "\u4E0E\u5BF9\u8BB2\u673A\u53E6\u4E00\u8FB9\u7684\u4EBA\u53D6\u5F97\u8054\u7CFB"
@@ -20,12 +20,23 @@ MonoBehaviour:
   - objectiveId: ch01_tk_01_talktoradio
     description: "\u67E5\u770B\u5BF9\u8BB2\u673A"
     requiredAmount: 1
+    completeFlag: 
   - objectiveId: ch01_tk_01_pickupgun
     description: "\u6361\u8D77\u65C1\u8FB9\u7684\u67AA"
     requiredAmount: 1
+    completeFlag: 
   - objectiveId: ch01_tk_01_downbridge
-    description: "\u4E0B\u6865\u53BB\u5BFB\u627E\u5BF9\u8BB2\u673A\u53E6\u4E00\u8FB9\u7684\u4EBA"
+    description: "\u4E0B\u6865"
     requiredAmount: 1
+    completeFlag: ch01_mono_04
+  - objectiveId: ch01_tk_01_converge
+    description: "\u4E0E\u5E73\u53F0\u4E0A\u7684\u4EBA\u4EEC\u6C47\u5408"
+    requiredAmount: 1
+    completeFlag: ch01_convergewithpeople
+  - objectiveId: ch01_tk_01_talktopeople
+    description: "\u4E0E\u4EBA\u4EEC\u4EA4\u8C08\u4EE5\u4E86\u89E3\u4FE1\u606F"
+    requiredAmount: 1
+    completeFlag: 
   prerequisiteQuestIds: []
   requiredFlags:
   - ch01_tk_01_start

@@ -18,6 +18,10 @@ public class Chapter01Controller : MonoBehaviour
     private const string GlockRevealFlag =
         "ch01_tk_01_pickupglock";
 
+    // 听完对讲机旁的自白（mono_04）后置位的标记，
+    // 用于解锁通往下一区域的梯子。
+    private const string LadderUnlockFlag = "ch01_mono_04";
+
     [Tooltip("对讲机对话结束后才启用的可拾取组件" +
         "（拖入 Glock 上的 PickableItem）")]
     [SerializeField]
@@ -27,6 +31,11 @@ public class Chapter01Controller : MonoBehaviour
         "（拖入 Player 下的 Glock 物体）")]
     [SerializeField]
     private GameObject glockObject;
+
+    [Tooltip("该标记置位后才启用的梯子组件" +
+        "（拖入目标梯子上的 Ladder）")]
+    [SerializeField]
+    private Ladder ladder;
 
     [Header("拾取初始弹药（拾取场景模型时写入手持 Glock）")]
 
@@ -57,6 +66,10 @@ public class Chapter01Controller : MonoBehaviour
         ApplyObjectUnlock(
             DialogueFlags.HasFlag(GlockRevealFlag)
         );
+
+        ApplyLadderUnlock(
+            DialogueFlags.HasFlag(LadderUnlockFlag)
+        );
     }
 
     private void OnEnable()
@@ -80,6 +93,12 @@ public class Chapter01Controller : MonoBehaviour
         if (flagName == GlockRevealFlag)
         {
             ApplyObjectUnlock(true);
+            return;
+        }
+
+        if (flagName == LadderUnlockFlag)
+        {
+            ApplyLadderUnlock(true);
         }
     }
 
@@ -175,5 +194,18 @@ public class Chapter01Controller : MonoBehaviour
             pickupAmmoPending = false;
             ApplyPickupAmmo(ResolveGlockWeapon());
         }
+    }
+
+    // 启用/禁用梯子组件；未赋值时跳过。
+    // 注意：禁用的是组件而不是物体，梯子的碰撞体仍在，
+    // 由 PlayerLadderClimb 检查 ladder.enabled 拦截攀爬。
+    private void ApplyLadderUnlock(bool unlocked)
+    {
+        if (ladder == null)
+        {
+            return;
+        }
+
+        ladder.enabled = unlocked;
     }
 }

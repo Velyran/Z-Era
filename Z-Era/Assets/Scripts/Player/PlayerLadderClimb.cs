@@ -306,7 +306,10 @@ public class PlayerLadderClimb : MonoBehaviour
     {
         Ladder ladder = other.GetComponentInParent<Ladder>();
 
-        if (ladder == null)
+        // 组件被禁用表示梯子尚未解锁（例：Chapter01Controller
+        // 按剧情标记启用）。GetComponentInParent 仍会返回禁用组件，
+        // 所以必须显式检查，否则禁用状态拦不住攀爬。
+        if (ladder == null || !ladder.enabled)
         {
             return;
         }

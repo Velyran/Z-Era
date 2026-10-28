@@ -1,0 +1,291 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99bd3cb82ac25b64bb8347d92bafc97d, type: 3}
+  m_Name: ch01_dia_william_02_talk
+  m_EditorClassIdentifier:
+  startNodeId: intro1
+  startFlag:
+  endFlag:
+  nodes:
+  - nodeId: intro1
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "嘿，我是威廉，看到你没事真好，当时我们发现你晕倒在隧道里，但是情况很紧急，它们快追上我们了，所以没能带上你......但幸好它们没发现晕倒的你。"
+    choices: []
+  - nodeId: intro2
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "他们都说你可能已经死了，但我发现你还有呼吸，就留了一把手枪给你保命。后来我用望远镜发现你醒了，就用对讲机联系你。"
+    choices: []
+  - nodeId: intro3
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "不过给你留的对讲机在我们撤离的过程中损坏了，所以用不了了。"
+    choices:
+    - buttonText: "很感谢你帮助了我。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: intro4
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "不用客气，我觉得现在计较利益不如大家团结起来，这样子活下去的机会还更大一些。"
+    choices:
+    - buttonText: "我有很多疑问，希望你能帮我解答。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: intro5
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "噢，当然，别客气。"
+    choices: []
+  - nodeId: hub1
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "你想了解什么。"
+    choices:
+    - buttonText: "这里是哪？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "这里发生了什么？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q2_1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "你见过联邦军队吗？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q3_1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "没什么了。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: end
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: q1
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "这里是灰港，联邦的一座港口城市，看你不像本地人，对灰港了解不多也正常。不过，我觉得这里不再是灰港了，而是地狱......"
+    choices: []
+  - nodeId: hub2
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "你想了解什么。"
+    choices:
+    - buttonText: "这里是哪？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "这里发生了什么？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q2_1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "你见过联邦军队吗？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q3_1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "没什么了。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: end
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: q2_1
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "你是联邦士兵，连这里发生了什么都不知道吗？但看你的表情好像真的什么都不知道。"
+    choices: []
+  - nodeId: q2_2
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "唉，长话短说，几天前，灰港出现了多起袭击，但发起袭击的市民都表现得十分异常，他们发疯似地......吃人......"
+    choices:
+    - buttonText: "什么？！"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: q2_3
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "被咬到的人也会变成那种怪物，重新爬起来再以相同的方式去攻击其他活人，然后整个城市都乱套了，到处都是混乱。"
+    choices: []
+  - nodeId: q2_4
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "之后，联邦居然向灰港投放了一枚温压弹。"
+    choices:
+    - buttonText: "但是它没发生爆炸。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: q2_5
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "是的......没人知道它会不会再次发生爆炸，不过也没人在意了，与其讨论它还会不会爆炸，不如先从保证别被怪物吃掉。"
+    choices: []
+  - nodeId: q2_6
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "与此同时灰港的幸存者无不抱怨和痛恨联邦上层，所以联邦军队来的时候并不受幸存者的待见，很大一部分也不愿意跟他们走。"
+    choices: []
+  - nodeId: hub3
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "你想了解什么。"
+    choices:
+    - buttonText: "这里是哪？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "这里发生了什么？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q2_1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "你见过联邦军队吗？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q3_1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "没什么了。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: end
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: q3_1
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "联邦军队在早些时候来过，他们本来想把剩下的幸存者带走，但貌似是收到了上头的什么指令，没带任何幸存者离开，而是匆忙去了另一头的隧道。"
+    choices: []
+  - nodeId: q3_2
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "如果你要追上他们，或许能前往那里。但可能不会特别顺利......"
+    choices:
+    - buttonText: "为什么？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: q3_3
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "灰港有一些地方帮派，灾难发生前还算安分，但发生后他们也趁此作乱，烧抢打砸，还挪动汽车堵住道路。"
+    choices: []
+  - nodeId: q3_4
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "联邦军队镇压了一部分动乱份子，另一部分或许已经变成怪物了。这些人消失了是好事，但是被堵住的道路却没人善后。"
+    choices: []
+  - nodeId: hub4
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "你想了解什么。"
+    choices:
+    - buttonText: "这里是哪？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "这里发生了什么？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q2_1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "你见过联邦军队吗？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: q3_1
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+    - buttonText: "没什么了。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: end
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: end
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "希望大家都能活下去吧......"
+    choices: []

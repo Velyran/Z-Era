@@ -5168,7 +5168,7 @@ MonoBehaviour:
   promptFormat: "\u54C8\u73C0"
   unknownPrompt: "\uFF1F\uFF1F\uFF1F"
   nameRevealNodeId: harper_03
-  enableOutline: 1
+  enableOutline: 0
   outlineColor: {r: 1, g: 0.8, b: 0, a: 1}
   outlineStartFlag: 
   outlineStopFlag: 
@@ -25225,10 +25225,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   category: 2
   interactionDistanceOverride: 0
+  displayName: 
   inventoryInitialRotation: {x: 0, y: -90, z: -90}
   unlimitedInteractions: 1
   maxInteractions: 1
   weaponName: 
+  magazineAmmo: 0
   flagsToSetOnPickup: []
   questId: 
   objectiveId: 
@@ -25418,10 +25420,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   category: 4
   interactionDistanceOverride: 0
+  displayName: 
   inventoryInitialRotation: {x: 90, y: -90, z: -90}
   unlimitedInteractions: 0
   maxInteractions: 1
   weaponName: 
+  magazineAmmo: 0
   flagsToSetOnPickup:
   - Achievement04
   questId: 

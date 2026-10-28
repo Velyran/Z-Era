@@ -65,6 +65,10 @@ public class TaskCameraGuidance : MonoBehaviour
     [SerializeField]
     private string markerFlag;
 
+    [Tooltip("该标记置位时关闭指引图标，留空则不关闭")]
+    [SerializeField]
+    private string hideFlag;
+
     [Header("锁定")]
 
     [Tooltip("运镜期间整体禁用的玩家对象（拖 Player 物体）；留空则不额外禁用")]
@@ -109,6 +113,12 @@ public class TaskCameraGuidance : MonoBehaviour
 
     private void OnFlagSet(string flagName)
     {
+        if (!string.IsNullOrWhiteSpace(hideFlag) &&
+            flagName == hideFlag)
+        {
+            HideMarker();
+        }
+
         if (flagName != requiredFlag)
         {
             return;
@@ -279,6 +289,13 @@ public class TaskCameraGuidance : MonoBehaviour
             return;
         }
 
+        // 关闭标记已经置位时不再显示（例如演出结束前任务已推进）。
+        if (!string.IsNullOrWhiteSpace(hideFlag) &&
+            DialogueFlags.HasFlag(hideFlag))
+        {
+            return;
+        }
+
         if (markerAnchor == null)
         {
             Debug.LogWarning(
@@ -299,5 +316,15 @@ public class TaskCameraGuidance : MonoBehaviour
         {
             DialogueFlags.SetFlag(markerFlag, true);
         }
+    }
+
+    private void HideMarker()
+    {
+        if (marker == null)
+        {
+            return;
+        }
+
+        marker.gameObject.SetActive(false);
     }
 }
