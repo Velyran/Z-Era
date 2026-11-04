@@ -11,8 +11,84 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99bd3cb82ac25b64bb8347d92bafc97d, type: 3}
   m_Name: ch01_dia_daniel_01_talk
-  m_EditorClassIdentifier: 
-  startNodeId: 
-  startFlag: 
-  endFlag: 
-  nodes: []
+  m_EditorClassIdentifier:
+  startNodeId: daniel_01
+  startFlag:
+  endFlag:
+  nodes:
+  - nodeId: daniel_01
+    speakerName: "？？？"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "哟，这不是联邦军队的士兵吗，怎么灰头土脸的，甚至需要我们这些平民把唯一的武器留下来给你保命。"
+    choices: []
+  - nodeId: daniel_02
+    speakerName: "威廉"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "丹尼尔，别这么说，这个时候我们更应该团结，这样一起活下去的机会才更大。"
+    choices: []
+  - nodeId: daniel_03
+    speakerName: "丹尼尔"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "活下去？你不要忘了这一切都是谁造成的！"
+    choices: []
+  - nodeId: daniel_04
+    speakerName:
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "威廉沉默了，没有再继续说话。"
+    choices:
+    - buttonText: "我看到这里受到了很大的影响。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: daniel_05
+    speakerName: "丹尼尔"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "哼，何止是很大的影响，这里变成了地狱，还影响了其他地方，甚至会影响整个世界。而你们联邦军队甚至连平民都无法保护！甚至还有个掉队的菜鸟。"
+    choices:
+    - buttonText: "我们在路上遭遇了变故。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: daniel_06
+    speakerName: "丹尼尔"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "你们和联邦都不是什么好东西，自己搞出了这些怪物，把灰港变成地狱，甚至还想用温压弹把这一切有关你们罪恶的证据都销毁！"
+    choices: []
+  - nodeId: daniel_07
+    speakerName: "丹尼尔"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "可是它没爆，这就是天意啊，你们的罪行会公之于世界！你们就是恶魔，妄图把灰港变成世界的恶魔！"
+    choices:
+    - buttonText: "（他似乎有些失控）"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: daniel_08
+    speakerName: "丹尼尔"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "我不想再跟你这种联邦的走狗有任何沟通。"
+    choices:
+    - buttonText: "（还是去找其他人了解情况吧）"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []

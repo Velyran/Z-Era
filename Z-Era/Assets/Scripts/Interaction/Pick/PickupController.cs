@@ -281,6 +281,12 @@ public class PickupController : MonoBehaviour
                 Destroy(item.gameObject);
                 break;
 
+            case PickupCategory.TaskProp:
+                // 任务道具：拾取后不进背包，仅禁用该物体（隐藏并退出
+                // 注册表，不再高亮也不可交互）。
+                item.gameObject.SetActive(false);
+                break;
+
             default:
                 // 道具/武器/特殊收集品：移入背包，可打开库存查看。
                 MoveItemToInventory(item);

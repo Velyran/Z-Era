@@ -13,6 +13,12 @@ using UnityEngine;
 /// </summary>
 public class TaskCameraGuidance : MonoBehaviour
 {
+    [Header("标识")]
+
+    [Tooltip("区分同一物体上多个本组件的备注，无任何功能含义")]
+    [SerializeField]
+    private string instanceLabel;
+
     [Header("触发")]
 
     [Tooltip("必填：该标记为 true 时开始演出，留空则本组件永不触发")]
@@ -189,6 +195,11 @@ public class TaskCameraGuidance : MonoBehaviour
             );
         }
 
+        // 锁定鼠标：运镜期间禁止玩家转动视角，
+        // 运镜结束后也保持锁定（不恢复原状态），见收尾处。
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
         // 上锁之后再整体禁用玩家对象：相机若在玩家层级下，
         // 需要靠上面的锁定与下面的恢复把状态对齐。
         bool playerWasActive =
@@ -233,6 +244,12 @@ public class TaskCameraGuidance : MonoBehaviour
         {
             DialogueRunner.UnlockGameplay();
         }
+
+        // 运镜结束后保持鼠标锁定：UnlockGameplay 会把鼠标
+        // 恢复为 TryLockGameplay 前保存的状态，这里在其之后
+        // 再锁一次，确保结束后鼠标仍处于锁定状态。
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
 
         ShowMarker();
     }
@@ -308,8 +325,7 @@ public class TaskCameraGuidance : MonoBehaviour
         }
 
         // 锚点由控制器注入，同一个标志可被不同演出复用到不同位置。
-        marker.SetAnchor(markerAnchor);
-        marker.gameObject.SetActive(true);
+        marker.Show(markerAnchor);
 
         // 标志出现之后才置位，供后续任务/对话条件判定。
         if (!string.IsNullOrWhiteSpace(markerFlag))
@@ -325,6 +341,8 @@ public class TaskCameraGuidance : MonoBehaviour
             return;
         }
 
-        marker.gameObject.SetActive(false);
+        // 只隐藏自己正在显示的标志；若已被其他 TaskCameraGuidance
+        // 接管（锚点已切换），则不动，避免同帧误关新显示的标志。
+        marker.Hide(markerAnchor);
     }
 }

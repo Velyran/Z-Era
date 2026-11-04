@@ -22,7 +22,11 @@ public enum PickupCategory
     Magazine,
 
     // 特殊收集品：后续规划，拾取后进入背包可查看，描边金色。
-    SpecialCollectible
+    SpecialCollectible,
+
+    // 任务道具：拾取（交互）后不进背包，仅禁用该物体（隐藏并退出注册表），
+    // 用于剧情触发型任务物品。描边沿用道具绿色。
+    TaskProp
 }
 
 public class PickableItem : MonoBehaviour

@@ -50,6 +50,10 @@ public class InventoryRadialView : MonoBehaviour
         public bool[] RigidbodyUseGravity;
         public Vector3[] RigidbodyVelocity;
         public Vector3[] RigidbodyAngularVelocity;
+        // 道具渲染网格相对自身 Transform 原点的偏移（localBounds.center），
+        // 用于抵消美术资源 pivot 不在几何中心（如 Polygon 物品原点在底部）
+        // 导致展示时视觉位置偏高/偏低的问题。
+        public Vector3 PivotOffset;
     }
 
     [Header("摄像机")]
@@ -428,6 +432,13 @@ public class InventoryRadialView : MonoBehaviour
                 OriginalLocalScale = item.localScale,
                 OriginalActiveSelf = item.gameObject.activeSelf
             };
+
+            // 记录网格相对 Transform 原点的偏移，展示时反向抵消，
+            // 让 pivot 不在中心的道具（如 Pills 原点在底部）视觉中心对齐布局位置。
+            if (state.Renderer != null)
+            {
+                state.PivotOffset = state.Renderer.localBounds.center;
+            }
 
             // 实例化材质并把渲染队列提到 Canvas 之后，
             // 道具才能绘制在溶解背景之上；关闭时还原。
@@ -1161,7 +1172,7 @@ public class InventoryRadialView : MonoBehaviour
             float selectionWeight =
                 GetSelectionWeight(i);
 
-            state.Item.localPosition =
+            Vector3 layoutPosition =
                 Vector3.Lerp(
                     ringPosition,
                     selectedPosition,
@@ -1193,6 +1204,18 @@ public class InventoryRadialView : MonoBehaviour
 
             state.LastAppliedLocalScale =
                 state.Item.localScale;
+
+            // 用当前局部旋转和缩放把 PivotOffset 换算到父空间，
+            // 从布局位置里扣除，使网格视觉中心对齐布局位置。
+            Vector3 pivotOffsetInParent =
+                state.Item.localRotation *
+                (Vector3.Scale(
+                    state.Item.localScale,
+                    state.PivotOffset
+                ));
+
+            state.Item.localPosition =
+                layoutPosition - pivotOffsetInParent;
         }
     }
 

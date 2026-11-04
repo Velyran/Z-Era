@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ch01_tk_01
   m_EditorClassIdentifier: 
   questId: ch01_tk_01
-  title: "\u4E0E\u5BF9\u8BB2\u673A\u53E6\u4E00\u8FB9\u7684\u4EBA\u53D6\u5F97\u8054\u7CFB"
+  title: "\u82CF\u9192"
   description: "\u4E00\u65C1\u7684\u5BF9\u8BB2\u673A\u54CD\u4E86\uFF0C\u4F3C\u4E4E\u662F\u6709\u4EBA\u8054\u7CFB"
   sceneName: 
   objectives:
@@ -35,17 +35,30 @@ MonoBehaviour:
     completeFlag: ch01_convergewithpeople
   - objectiveId: ch01_tk_01_talktopeople
     description: "\u4E0E\u4EBA\u4EEC\u4EA4\u8C08\u4EE5\u4E86\u89E3\u4FE1\u606F"
-    requiredAmount: 1
+    requiredAmount: 4
     completeFlag: 
   prerequisiteQuestIds: []
   requiredFlags:
   - ch01_tk_01_start
   forbiddenFlags: []
   flagsToSetOnAccept: []
-  flagsToSetOnComplete: []
+  flagsToSetOnComplete:
+  - ch01_tk_01_finished
   onAccept:
     m_PersistentCalls:
       m_Calls: []
   onComplete:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 11400000, guid: 69ee911275356e74187a2d7ff1c0dc01, type: 2}
+        m_TargetAssemblyTypeName: QuestAsset, Assembly-CSharp
+        m_MethodName: StartFromEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2

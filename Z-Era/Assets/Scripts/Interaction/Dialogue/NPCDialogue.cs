@@ -773,32 +773,13 @@ public class NPCDialogue : MonoBehaviour
         return material;
     }
 
-    // 提示文本的当前占用者。多个 NPC 可能共用同一个提示文本
-    // （例如一个"对准按 E"的物体和一个"进入范围自动触发"的
-    // 触发器挂在同一个 HUD 文本上），而触发器模式每帧都会走到
-    // 清空提示的分支，不加占用标记就会把同一帧里别人写好的
-    // 提示擦掉，表现为"提示永远不显示"。
-    private static readonly Dictionary<TMP_Text, NPCDialogue>
-        promptOwners = new Dictionary<TMP_Text, NPCDialogue>();
-
-    // 当前提示文本是否由本组件占用。
-    private bool OwnsPrompt()
-    {
-        return promptText != null &&
-               promptOwners.TryGetValue(promptText, out NPCDialogue owner) &&
-               owner == this;
-    }
-
+    // 提示文本的占用登记交给 InteractionPromptRegistry：
+    // 多个交互组件（NPC、门等）共用同一个 HUD 提示文本时，
+    // 只有当前占用者能清空，避免互相擦除。
     // 归还提示文本并清空，仅在确实由本组件占用时生效。
     private void ReleasePrompt()
     {
-        if (!OwnsPrompt())
-        {
-            return;
-        }
-
-        promptOwners.Remove(promptText);
-        promptText.text = string.Empty;
+        InteractionPromptRegistry.Release(promptText, this);
     }
 
     private void UpdatePrompt(
@@ -817,7 +798,7 @@ public class NPCDialogue : MonoBehaviour
             return;
         }
 
-        promptOwners[promptText] = this;
+        InteractionPromptRegistry.Acquire(promptText, this);
 
         string activePrompt = hasIntroduced
             ? promptFormat

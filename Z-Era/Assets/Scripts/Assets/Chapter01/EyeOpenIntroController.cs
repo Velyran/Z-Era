@@ -62,6 +62,10 @@ public class EyeOpenIntroController : MonoBehaviour
     [SerializeField]
     private PlayerController playerController;
 
+    [Tooltip("睁眼期间及第一段对话结束前隐藏的 HUD Canvas；留空则不隐藏")]
+    [SerializeField]
+    private GameObject hudCanvas;
+
     [Header("时序（秒，未缩放时间）")]
 
     [Tooltip("漫画关闭、锁定之后的全黑停留时长")]
@@ -94,6 +98,17 @@ public class EyeOpenIntroController : MonoBehaviour
     // 锁定期间被本组件禁用的组件，解锁时原样恢复
     private readonly List<Behaviour> lockedBehaviours =
         new List<Behaviour>();
+
+    // 第一段对话结束前被禁用的 ESC 响应组件（设置面板等）
+    private readonly List<Behaviour> escBlockingBehaviours =
+        new List<Behaviour>();
+
+    // HUD 原始显隐状态
+    private bool hudWasActive;
+    private bool hasHudState;
+
+    // 是否已订阅 DialogueRunner.DialogueEnded
+    private bool listeningDialogueEnded;
 
     private void Awake()
     {
@@ -170,13 +185,41 @@ public class EyeOpenIntroController : MonoBehaviour
             }
         }
 
-        // 全睁收尾：放开点击、隐藏黑幕（露出玩法画面与 UI）、解锁
+        // 全睁收尾：放开点击、隐藏黑幕
         eyeImage.raycastTarget = false;
-
-        UnlockControls();
 
         // 隐藏黑幕本体（脚本与 Image 同物体时即隐藏自身）
         eyeImage.gameObject.SetActive(false);
+
+        // 睁眼结束：恢复玩家控制组件，让独白触发器能正常检测并触发；
+        // 但 HUD 继续隐藏、ESC 继续拦截，直到第一段对话结束。
+        UnlockControls();
+
+        // 监听第一段对话结束事件。注意必须用 DialogueEnded 事件
+        // 而不是对话的 endFlag：endFlag 在 EndDialogue 开头立即置位，
+        // 此时 RestoreGameplay（会把 HUD 恢复为对话前的隐藏状态）
+        // 还没执行；若在 flag 回调里显示 HUD，会被随后的
+        // RestoreGameplay 覆盖为隐藏。DialogueEnded 在
+        // RestoreGameplay 之后触发，此时设 HUD 为最终值。
+        if (!listeningDialogueEnded && DialogueRunner.Instance != null)
+        {
+            DialogueRunner.Instance.DialogueEnded +=
+                OnFirstDialogueEnded;
+            listeningDialogueEnded = true;
+        }
+    }
+
+    // 第一段对话结束：恢复 HUD 与 ESC。
+    private void OnFirstDialogueEnded()
+    {
+        if (DialogueRunner.Instance != null)
+        {
+            DialogueRunner.Instance.DialogueEnded -=
+                OnFirstDialogueEnded;
+        }
+
+        listeningDialogueEnded = false;
+        RestoreHudAndEsc();
     }
 
     // 单段过渡：睁眼度 from → stage.openTo，按缓动曲线推进，
@@ -257,6 +300,21 @@ public class EyeOpenIntroController : MonoBehaviour
             behaviour.enabled = false;
         }
 
+        // 隐藏 HUD：睁眼期间不显示任何玩法界面。
+        if (hudCanvas != null)
+        {
+            hasHudState = true;
+            hudWasActive = hudCanvas.activeSelf;
+            hudCanvas.SetActive(false);
+        }
+        else
+        {
+            hasHudState = false;
+        }
+
+        // 禁用 ESC 响应组件，睁眼到第一段对话结束前不允许打开设置等界面。
+        DisableEscBlockingBehaviours();
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -275,6 +333,49 @@ public class EyeOpenIntroController : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    // 第一段对话结束后恢复 HUD 与 ESC 响应组件。
+    private void RestoreHudAndEsc()
+    {
+        if (hasHudState && hudCanvas != null)
+        {
+            hudCanvas.SetActive(hudWasActive);
+            hasHudState = false;
+        }
+
+        foreach (Behaviour behaviour in escBlockingBehaviours)
+        {
+            if (behaviour != null)
+            {
+                behaviour.enabled = true;
+            }
+        }
+
+        escBlockingBehaviours.Clear();
+    }
+
+    private void DisableEscBlockingBehaviours()
+    {
+        escBlockingBehaviours.Clear();
+
+        AddEscBlock(FindObjectOfType<SettingsUIRoot>());
+        AddEscBlock(FindObjectOfType<TaskPanelController>());
+        AddEscBlock(FindObjectOfType<InventoryInput>());
+        AddEscBlock(FindObjectOfType<TipPanelController>());
+
+        foreach (Behaviour behaviour in escBlockingBehaviours)
+        {
+            behaviour.enabled = false;
+        }
+    }
+
+    private void AddEscBlock(Behaviour behaviour)
+    {
+        if (behaviour != null && behaviour.enabled)
+        {
+            escBlockingBehaviours.Add(behaviour);
+        }
     }
 
     private void AddLock(Behaviour behaviour)
@@ -339,6 +440,13 @@ public class EyeOpenIntroController : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (listeningDialogueEnded && DialogueRunner.Instance != null)
+        {
+            DialogueRunner.Instance.DialogueEnded -=
+                OnFirstDialogueEnded;
+            listeningDialogueEnded = false;
+        }
+
         if (eyeImage != null && sourceMaterial != null)
         {
             eyeImage.material = sourceMaterial;

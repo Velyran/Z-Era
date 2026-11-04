@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99bd3cb82ac25b64bb8347d92bafc97d, type: 3}
+  m_Name: ch01_dia_sophia_01_talk
+  m_EditorClassIdentifier:
+  startNodeId: sophia_01
+  startFlag:
+  endFlag:
+  nodes:
+  - nodeId: sophia_01
+    speakerName: "？？？"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "你......你好，听他们说，你是联邦士兵......"
+    choices:
+    - buttonText: "你好。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: sophia_02
+    speakerName: "索菲亚"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "很高兴认识你，我叫索菲亚。"
+    choices:
+    - buttonText: "你看起来身上有伤？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: sophia_03
+    speakerName: "索菲亚"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "对......咳咳......灾难刚发生的时候，我还躺在医院的病床上。一切都太突然了，我根本不知道外面发生了什么。"
+    choices: []
+  - nodeId: sophia_04
+    speakerName: "索菲亚"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "当时我听到病房外面有很吵的声音，所有医生和护士都在奔跑和尖叫，我也很害怕，就把病房的门锁了起来。"
+    choices: []
+  - nodeId: sophia_05
+    speakerName: "索菲亚"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "后来是幸存者们找到了我，并把我带到了这里，要是没有他们，或许我很可能会遭遇不测......咳咳咳......"
+    choices:
+    - buttonText: "那你后续的治疗怎么办？"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: sophia_06
+    speakerName: "索菲亚"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "药都还在医院里，当时为了逃命，没来得及把药带出来......咳咳咳......他们说要回去帮我找，但我觉得太危险了，就没答应。"
+    choices:
+    - buttonText: "你先好好休息。"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId:
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: sophia_07
+    speakerName: "索菲亚"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "好，谢谢你的关心......"
+    choices: []
