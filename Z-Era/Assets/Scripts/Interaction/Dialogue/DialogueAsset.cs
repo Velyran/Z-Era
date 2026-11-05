@@ -52,6 +52,12 @@ public class DialogueAsset : ScriptableObject
         [Tooltip("正文，支持 TMP 富文本")]
         public string text;
 
+        [Tooltip("勾选后，本节点播完、点击继续时直接结束对话，" +
+            "不再顺序推进到列表里的下一条。" +
+            "用于多条分支各自收尾：把每条分支的最后一个节点勾上即可，" +
+            "不必再让它们汇流到同一个尾节点")]
+        public bool endsDialogue;
+
         [Tooltip("选项列表，留空则点击继续下一条")]
         public List<DialogueChoice> choices = new List<DialogueChoice>();
     }
@@ -101,6 +107,23 @@ public class DialogueAsset : ScriptableObject
         }
 
         DialogueFlags.SetFlag(endFlag, true);
+    }
+
+    // ============ UnityEvent 接线入口 ============
+    // 选项的 onSelected 无法直接引用 DialogueFlags（它是运行时
+    // 懒创建的单例，场景里没有可拖的物体），因此把对话资产自身
+    // 拖进 onSelected 的目标槽，再选下面的实例方法。
+
+    // 置位指定标记。
+    public void SetFlagFromEvent(string flagName)
+    {
+        DialogueFlags.SetFlag(flagName, true);
+    }
+
+    // 清除指定标记。
+    public void ClearFlagFromEvent(string flagName)
+    {
+        DialogueFlags.SetFlag(flagName, false);
     }
 
     // 按 id 查找节点，找不到返回 null。

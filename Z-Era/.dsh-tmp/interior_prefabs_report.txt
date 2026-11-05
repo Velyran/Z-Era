@@ -1,0 +1,1 @@
+target=Interior_Dressing_SM_Bld_Commercial_Medium_01 transforms=151 prefabs=141 counts={'Building body': 9, 'Decoration': 132} non_direct=0 non_prefab=10 body=SM_Bld_Commercial_Medium_01.prefab

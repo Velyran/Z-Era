@@ -27,6 +27,12 @@ public class MonologueUIController : MonoBehaviour
 
     private Coroutine displayRoutine;
 
+    // HUD 被关闭（对话、睁眼演出、背包等）期间请求的自白：
+    // 此时本组件不在激活状态，协程起不来（Unity 会报
+    // "Coroutine couldn't be started because the game object is inactive"），
+    // 先存下来，等 OnEnable 再播。后到的自白顶掉先前的。
+    private MonologueAsset pendingAsset;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -78,10 +84,25 @@ public class MonologueUIController : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        // 挂起期间 HUD 被重新启用：把当时没播成的自白补播出来。
+        if (pendingAsset == null)
+        {
+            return;
+        }
+
+        MonologueAsset asset = pendingAsset;
+        pendingAsset = null;
+
+        BeginShow(asset);
+    }
+
     private void OnDisable()
     {
         // 画布整体被隐藏（如对话开始时关闭 HUD）时收尾，
         // 避免恢复后残留半透明的旧文本。
+        // 注意：pendingAsset 不在这里清空，那是"等 HUD 回来再播"的排队项。
         ResetDisplay();
     }
 
@@ -114,6 +135,16 @@ public class MonologueUIController : MonoBehaviour
         {
             return;
         }
+
+        // 物体不在层级激活状态时 StartCoroutine 会失败并报错，
+        // 协程根本不会跑——先挂起，等 OnEnable 补播。
+        if (!isActiveAndEnabled)
+        {
+            pendingAsset = asset;
+            return;
+        }
+
+        pendingAsset = null;
 
         if (displayRoutine != null)
         {

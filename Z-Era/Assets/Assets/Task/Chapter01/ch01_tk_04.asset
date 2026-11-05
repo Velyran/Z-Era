@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2904c0d84713cc4a44aa91d5036d8294, type: 3}
+  m_Name: ch01_tk_04
+  m_EditorClassIdentifier: 
+  questId: ch01_tk_04
+  title: "\u9057\u7269"
+  description: "\u7D22\u83F2\u4E9A\u8BF4\uFF0C\u4E39\u5C3C\u5C14\u66FE\u4E0E\u8054\u90A6\u519B\u961F\u6709\u6240\u4EA4\u96C6\uFF0C\u6216\u8BB8\u6211\u5E2E\u4ED6\u627E\u5230\u5BB6\u4EBA\u9057\u7269\uFF0C\u4ED6\u613F\u610F\u544A\u8BC9\u6211\u76F8\u5173\u4FE1\u606F\u3002"
+  sceneName: 
+  objectives:
+  - objectiveId: ch01_tk_04_go_to_hospital_building_2
+    description: "\u524D\u5F80\u533B\u96622\u53F7\u697C"
+    requiredAmount: 1
+    completeFlag: door_13_14_opened
+  - objectiveId: ch01_tk_04_find_the_phone
+    description: "\u57282\u53F7\u697C\u4E2D\u627E\u5230\u9057\u7269\u624B\u673A"
+    requiredAmount: 1
+    completeFlag: ch01_tk_04_find_the_phone_finished
+  - objectiveId: ch01_tk_04_take_phone_to_daniel
+    description: "\u628A\u624B\u673A\u5E26\u56DE\u7ED9\u4E39\u5C3C\u5C14"
+    requiredAmount: 1
+    completeFlag: ch01_give_the_phone
+  prerequisiteQuestIds:
+  - ch01_tk_03
+  requiredFlags: []
+  forbiddenFlags: []
+  flagsToSetOnAccept:
+  - door_13_14_can_open
+  flagsToSetOnComplete: []
+  onAccept:
+    m_PersistentCalls:
+      m_Calls: []
+  onComplete:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 11400000, guid: 27cfc0697b80b6f4e8e0cd4c7c25e2c7, type: 2}
+        m_TargetAssemblyTypeName: QuestAsset, Assembly-CSharp
+        m_MethodName: StartFromEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2

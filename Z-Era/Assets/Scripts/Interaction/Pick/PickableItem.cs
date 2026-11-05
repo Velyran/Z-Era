@@ -136,6 +136,9 @@ public class PickableItem : MonoBehaviour
                     return new Color(1f, 0.25f, 0.2f, 1f);
                 case PickupCategory.SpecialCollectible:
                     return new Color(1f, 0.8f, 0f, 1f);
+                case PickupCategory.Prop:
+                case PickupCategory.TaskProp:
+                    return new Color(0f, 1f, 0.4f, 1f);
                 default:
                     return new Color(0f, 1f, 0.4f, 1f);
             }

@@ -137,6 +137,13 @@ public class NPCDialogue : MonoBehaviour
     [SerializeField]
     private float zoneYawOffset = 0f;
 
+    // 运行时调整可对话扇形的半角（度）：供剧情演出等外部系统使用，
+    // 例如物资搜集完成后收紧 Teresa 的可对话朝向范围。
+    public void SetInteractHalfAngle(float halfAngle)
+    {
+        interactHalfAngle = Mathf.Clamp(halfAngle, 0f, 180f);
+    }
+
     private Camera cachedCamera;
     private DialogueRunner dialogueRunner;
 

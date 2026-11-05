@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7735a702022844a4ab02a9f6c34da2b9, type: 3}
+  m_Name: mono_11_take_phone_to_daniel
+  m_EditorClassIdentifier: 
+  segments:
+  - "\u8FD9\u6216\u8BB8\u5C31\u662F\u4E39\u5C3C\u5C14\u60F3\u8981\u627E\u7684\u624B\u673A\uFF0C\u62FF\u56DE\u53BB\u7ED9\u4ED6\u770B\u770B\u5427\u3002"
+  charactersPerSecond: 50
+  holdDuration: 4
+  fadeDuration: 1
+  segmentInterval: 0
+  requiredFlags:
+  - ch01_tk_04_find_the_phone_finished
+  forbiddenFlags: []
+  flagsToSetOnShown: []

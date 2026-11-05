@@ -1,0 +1,110 @@
+    private static List<Item> Layout()
+    {
+        var list = new List<Item>();
+        // 1F: triage to the west, treatment bays to the east, waiting seats toward the entrance.
+        list.Add(new Item("SM_Prop_Desk_02", 0, -9.4f, -3.0f, 90));
+        list.Add(new Item("SM_Prop_Desk_02", 0, -5.4f, -3.0f, 90));
+        foreach (float x in new[] { -9.2f, -6.0f, -2.8f })
+        {
+            list.Add(new Item("SM_Prop_Chair_Metal_01", 0, x, 3.7f, 180));
+            list.Add(new Item("SM_Prop_Chair_Metal_01", 0, x, 2.4f, 180));
+        }
+        foreach (float z in new[] { -3.0f, 0.0f, 3.0f })
+        {
+            list.Add(new Item("SM_Prop_Bed_Gurney_01", 0, 3.0f, z, 90));
+            list.Add(new Item("SM_Prop_Medical_IVStand_01", 0, 4.7f, z - 0.7f, 0));
+        }
+        list.Add(new Item("SM_Prop_Medical_Shelf_01", 0, 8.3f, -3.5f, 0));
+        list.Add(new Item("SM_Prop_Medical_Shelf_02", 0, 8.3f, 3.6f, 180));
+        list.Add(new Item("SM_Prop_WheelChair_01", 0, -2.0f, -2.7f, 155));
+        list.Add(new Item("SM_Prop_WheelChair_01", 0, 7.2f, 0.5f, 228));
+        list.Add(new Item("SM_Prop_Chair_Metal_01", 0, -4.0f, 0.8f, 225, 90));
+        list.Add(new Item("SM_Prop_Sign_Emergency_01", 0, -1.0f, 4.0f, 180));
+        list.Add(new Item("SM_Prop_Medical_Container_Broken_01", 0, -7.5f, -0.5f, 30));
+        list.Add(new Item("SM_Prop_MedicalBox_01", 0, 6.2f, -3.5f, 12));
+
+        // 2F is a general ward: two orderly opposing rows, six beds, central nursing/storage.
+        // This is an independent layout, not a shared ward template with a few changed rotations.
+        foreach (float x in new[] { -9.3f, -3.8f, 2.0f })
+        {
+            list.Add(new Item("SM_Prop_Bed_Hospital_01", 1, x, -3.0f, 90));
+            list.Add(new Item("SM_Prop_Bed_Hospital_01", 1, x, 3.0f, 270));
+            list.Add(new Item("SM_Prop_Medical_IVStand_01", 1, x + 1.6f, -3.6f, 0));
+            list.Add(new Item("SM_Prop_Medical_IVStand_01", 1, x - 1.6f, 3.6f, 0));
+            list.Add(new Item("SM_Prop_Chair_Soft_01", 1, x + 1.8f, 1.6f, 270));
+            list.Add(new Item("SM_Prop_MedicalBox_01", 1, x - 1.4f, -1.7f, 0));
+        }
+        list.Add(new Item("SM_Prop_Desk_02", 1, 7.2f, -3.2f, 90));
+        list.Add(new Item("SM_Prop_Seat_01", 1, 8.7f, -3.2f, 270));
+        list.Add(new Item("SM_Prop_Medical_Shelf_01", 1, 7.2f, 3.8f, 180));
+        list.Add(new Item("SM_Prop_Medical_Shelf_02", 1, 9.0f, 3.8f, 180));
+        list.Add(new Item("SM_Prop_WheelChair_01", 1, 6.4f, 0.5f, 180));
+        list.Add(new Item("SM_Prop_Medical_Container_01", 1, -6.5f, 0.9f, 0));
+        list.Add(new Item("SM_Prop_CardboardBox_02", 1, 8.7f, 1.7f, 5));
+
+        // 3F is an improvised isolation ward: a longitudinal bed cluster to the west,
+        // displaced overflow gurneys in the east and a separate supply/quarantine station.
+        // No bed/IV/desk/wheelchair anchor is reused from the 2F arrangement.
+        list.Add(new Item("SM_Prop_Bed_Hospital_01", 2, -9.5f, -2.4f, 0));
+        list.Add(new Item("SM_Prop_Bed_Hospital_01", 2, -6.2f, -2.2f, 8));
+        list.Add(new Item("SM_Prop_Bed_Hospital_01", 2, -9.0f, 2.4f, 180));
+        list.Add(new Item("SM_Prop_Bed_Gurney_01", 2, -5.6f, 2.3f, 164));
+        list.Add(new Item("SM_Prop_Bed_Gurney_01", 2, 2.0f, -2.6f, 18));
+        list.Add(new Item("SM_Prop_Bed_Gurney_BodySheet_01", 2, 5.6f, 2.3f, 172));
+        list.Add(new Item("SM_Prop_Bed_Hospital_01", 2, 2.5f, 2.5f, 192));
+        list.Add(new Item("SM_Prop_Medical_IVStand_01", 2, -10.8f, -2.2f, 0));
+        list.Add(new Item("SM_Prop_Medical_IVStand_01", 2, -7.4f, -2.4f, 18));
+        list.Add(new Item("SM_Prop_Medical_IVStand_01", 2, -10.6f, 2.6f, 0));
+        list.Add(new Item("SM_Prop_Medical_IVStand_01", 2, 0.6f, -3.0f, 0));
+        list.Add(new Item("SM_Prop_Medical_IVStand_01", 2, 4.0f, 2.8f, 22));
+        list.Add(new Item("SM_Prop_Desk_01", 2, -2.1f, 3.5f, 180));
+        list.Add(new Item("SM_Prop_Chair_Metal_01", 2, -2.2f, 2.2f, 18));
+        list.Add(new Item("SM_Prop_Medical_Shelf_02", 2, 8.4f, -2.6f, 270));
+        list.Add(new Item("SM_Prop_Medical_Shelf_01", 2, 8.4f, 0.0f, 270));
+        list.Add(new Item("SM_Prop_WheelChair_01", 2, -3.4f, -1.1f, 138));
+        list.Add(new Item("SM_Prop_WheelChair_01", 2, 6.2f, -1.8f, 216));
+        list.Add(new Item("SM_Prop_Chair_Metal_01", 2, -0.5f, -0.7f, 55, 90));
+        list.Add(new Item("SM_Prop_Sign_Quarantine_01", 2, -3.2f, -3.9f, 0));
+        list.Add(new Item("SM_Prop_Medical_Container_Broken_01", 2, 0.2f, 1.2f, 35));
+        list.Add(new Item("SM_Prop_Crate_Open_01", 2, 7.8f, 3.8f, 22));
+        list.Add(new Item("SM_Prop_Medical_Container_01", 2, 8.5f, 2.2f, 0));
+        list.Add(new Item("SM_Prop_MedicalBox_01", 2, -4.2f, 0.4f, 35));
+
+        // 4F administration: six desk stations, archive shelves and a meeting/lounge corner.
+        foreach (Vector3 p in new[] { new Vector3(-9.4f,0,-2.8f), new Vector3(-5.8f,0,-2.8f), new Vector3(-2.2f,0,-2.8f), new Vector3(-9.4f,0,2.8f), new Vector3(-5.8f,0,2.8f), new Vector3(-2.2f,0,2.8f) })
+        {
+            list.Add(new Item("SM_Prop_Desk_02", 3, p.x, p.z, p.z < 0 ? 90 : 270));
+            list.Add(new Item("SM_Prop_Seat_01", 3, p.x + (p.z < 0 ? 1.3f : -1.3f), p.z, p.z < 0 ? 270 : 90));
+        }
+        list.Add(new Item("SM_Prop_Bookshelf_01", 3, 7.8f, -3.9f, 0));
+        list.Add(new Item("SM_Prop_Bookshelf_01", 3, 5.4f, -3.9f, 0));
+        list.Add(new Item("SM_Prop_Bookshelf_01", 3, 3.0f, -3.9f, 0));
+        list.Add(new Item("SM_Prop_Couch_01", 3, 7.8f, 2.9f, 270));
+        list.Add(new Item("SM_Prop_Couch_02", 3, 3.4f, 3.2f, 180));
+        list.Add(new Item("SM_Prop_CoffeeTable_02", 3, 4.5f, 1.2f, 12));
+        list.Add(new Item("SM_Prop_Chair_Metal_01", 3, -4.4f, 0.7f, 30, 90));
+        list.Add(new Item("SM_Prop_Crate_Open_01", 3, 8.2f, -1.4f, 15));
+        list.Add(new Item("SM_Prop_CardboardBox_02", 3, -10.6f, 0.6f, 22));
+
+        // Dense small-scale storytelling: distinct deterministic patterns per floor.
+        // Main equipment is placed first; support/clearance checks remain mandatory for every item.
+        for (int floor = 0; floor < 4; floor++)
+        {
+            for (int row = 0; row < 3; row++)
+            for (int column = 0; column < 8; column++)
+            {
+                float x = -10.5f + column * 2.55f + (floor % 2) * 0.32f;
+                float z = -1.2f + row * 1.2f + (floor - 1) * 0.13f;
+                string paper = "SM_Prop_Papers_0" + (1 + (column + row + floor) % 3);
+                list.Add(new Item(paper, floor, x, z, (column * 47 + row * 71 + floor * 29) % 360));
+            }
+            for (int i = 0; i < 8; i++)
+            {
+                float x = -10.0f + i * 2.65f;
+                float z = i % 2 == 0 ? -4.5f : 4.5f;
+                string supply = floor == 3 ? "SM_Prop_CardboardBox_02" : i % 3 == 0 ? "SM_Prop_MedicalBox_01" : "SM_Prop_Medical_Container_01";
+                list.Add(new Item(supply, floor, x, z, floor == 1 ? 0 : i * 31));
+            }
+        }
+        return list;
+    }

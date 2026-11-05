@@ -582,6 +582,13 @@ public class DialogueRunner : MonoBehaviour
             return next;
         }
 
+        // 节点标记了"到此为止"：顺序推进在这里截断，
+        // 让多条分支可以各自收尾，而不必汇流到同一个尾节点。
+        if (current != null && current.endsDialogue)
+        {
+            return null;
+        }
+
         int index = asset.GetIndex(current.nodeId);
 
         if (index < 0 ||

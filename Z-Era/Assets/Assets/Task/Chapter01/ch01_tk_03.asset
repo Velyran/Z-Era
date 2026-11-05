@@ -29,10 +29,10 @@ MonoBehaviour:
     description: "\u5728\u8D85\u5E02\u4E2D\u641C\u5BFB\u53EF\u7528\u7684\u7269\u8D44"
     requiredAmount: 10
     completeFlag: 
-  - objectiveId: ch01_tk_03_
-    description: "\u628A\u7269\u8D44\u5E26\u56DE\u5E78\u5B58\u8005\u5E73\u53F0"
-    requiredAmount: 10
-    completeFlag: 
+  - objectiveId: ch01_tk_03_bring_back_supplies
+    description: "\u628A\u7269\u8D44\u5E26\u56DE\u7ED9\u7D22\u83F2\u4E9A"
+    requiredAmount: 1
+    completeFlag: ch01_tk_03_bring_back_supplies_finished
   prerequisiteQuestIds:
   - ch01_tk_02
   requiredFlags: []
@@ -44,4 +44,16 @@ MonoBehaviour:
       m_Calls: []
   onComplete:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 11400000, guid: b840026411793d04b9dd20f45df75b96, type: 2}
+        m_TargetAssemblyTypeName: QuestAsset, Assembly-CSharp
+        m_MethodName: StartFromEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2

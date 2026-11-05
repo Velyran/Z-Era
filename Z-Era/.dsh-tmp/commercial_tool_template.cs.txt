@@ -1,0 +1,146 @@
+using System;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+/// <summary>
+/// Single-building trial copied from 3_Detailed_Reference_Scene.
+/// Data is relative to the reference building, not the dressing group's world origin.
+/// No scene YAML is written; run the menu in Unity and inspect before saving.
+/// </summary>
+public static class Chapter01CommercialReferenceDressing
+{
+    private const string ScenePath = "Assets/Scenes/3_Chapter01.unity";
+    private const string BuildingName = "SM_Bld_Commercial_Medium_01";
+    private const string BuildingGuid = "5aed343e83179d249af6934614d6f0ea";
+    private const string PropsFolder = "Assets/Packages/ScenesPackages/PolygonApocalypse/Prefabs/Props/";
+    private const string InstancePrefix = "Chapter01_Reference_";
+    private const string UndoLabel = "Add Chapter01 reference interior";
+    private static readonly Vector3 Anchor = new Vector3(119.8f, 0f, 46.8f);
+
+    [MenuItem("Tools/Chapter01/参考场景装饰 - Commercial Medium 01（单栋测试）")]
+    public static void Apply()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogError("Chapter01ReferenceDressing：请退出 Play 模式后执行。");
+            return;
+        }
+
+        Scene scene = SceneManager.GetSceneByPath(ScenePath);
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            Debug.LogError("Chapter01ReferenceDressing：请先打开并保存 3_Chapter01 场景。");
+            return;
+        }
+
+        Transform building = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            foreach (Transform candidate in root.GetComponentsInChildren<Transform>(true))
+            {
+                bool nameMatches = candidate.name == BuildingName || candidate.name.StartsWith(BuildingName + " (", StringComparison.Ordinal);
+                if (!nameMatches || Vector3.Distance(candidate.position, Anchor) > 0.1f)
+                    continue;
+                GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(candidate.gameObject);
+                if (source == null || AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(source)) != BuildingGuid)
+                    continue;
+                if (building != null)
+                {
+                    Debug.LogError("Chapter01ReferenceDressing：坐标附近匹配到多个目标，未创建装饰。");
+                    return;
+                }
+                building = candidate;
+            }
+        }
+        if (building == null)
+        {
+            Debug.LogError("Chapter01ReferenceDressing：未找到 " + BuildingName + " @ " + Anchor + "，未创建装饰。");
+            return;
+        }
+        foreach (Transform child in building)
+        {
+            if (child.name.StartsWith(InstancePrefix, StringComparison.Ordinal))
+            {
+                Debug.LogWarning("Chapter01ReferenceDressing：本栋已执行参考布置，跳过，避免重复叠放。可先 Undo 撤销上次布置。", building);
+                return;
+            }
+        }
+
+        // Load every asset before creating anything, so a missing asset cannot leave a partial layout.
+        var prefabs = new Dictionary<string, GameObject>();
+        foreach (Placement entry in Data)
+        {
+            if (prefabs.ContainsKey(entry.PrefabName))
+                continue;
+            string path = PropsFolder + entry.PrefabName + ".prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null)
+            {
+                Debug.LogError("Chapter01ReferenceDressing：缺少预制体 " + path + "，未创建装饰。", building);
+                return;
+            }
+            prefabs.Add(entry.PrefabName, prefab);
+        }
+
+        Undo.IncrementCurrentGroup();
+        int group = Undo.GetCurrentGroup();
+        Undo.SetCurrentGroupName(UndoLabel);
+        Undo.RegisterFullObjectHierarchyUndo(building.gameObject, UndoLabel);
+        int created = 0;
+        try
+        {
+            foreach (Placement entry in Data)
+            {
+                GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefabs[entry.PrefabName], building);
+                Undo.RegisterCreatedObjectUndo(instance, UndoLabel);
+                instance.name = InstancePrefix + created.ToString("D3") + "_" + entry.PrefabName;
+                instance.transform.localPosition = entry.Position;
+                instance.transform.localRotation = entry.Rotation;
+                instance.transform.localScale = entry.Scale;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(instance.transform);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(instance);
+                created++;
+            }
+            EditorSceneManager.MarkSceneDirty(scene);
+            Undo.CollapseUndoOperations(group);
+        }
+        catch (Exception exception)
+        {
+            Undo.RevertAllDownToGroup(group);
+            Debug.LogException(exception);
+            Debug.LogError("Chapter01ReferenceDressing：创建失败，已撤销本次操作。", building);
+            return;
+        }
+
+        Selection.activeGameObject = building.gameObject;
+        Debug.Log("Chapter01ReferenceDressing：" + building.name + " @ " + building.position +
+            "，创建 " + created + " 件参考装饰（" + prefabs.Count + " 种预制体）。使用建筑局部坐标；场景尚未自动保存，可单次 Undo 撤销。", building);
+    }
+
+    private readonly struct Placement
+    {
+        public readonly string PrefabName;
+        public readonly Vector3 Position;
+        public readonly Quaternion Rotation;
+        public readonly Vector3 Scale;
+
+        public Placement(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            PrefabName = prefabName;
+            Position = position;
+            Rotation = rotation;
+            Scale = scale;
+        }
+    }
+
+    // Extracted from Prefab.m_SourcePrefab GUIDs and serialized Transform values.
+    // Source group: Interior_Dressing_SM_Bld_Commercial_Medium_01 (Transform 1736055158).
+    // __EXTRACTION_SUMMARY__
+    private static readonly Placement[] Data =
+    {
+__PLACEMENTS__
+    };
+}

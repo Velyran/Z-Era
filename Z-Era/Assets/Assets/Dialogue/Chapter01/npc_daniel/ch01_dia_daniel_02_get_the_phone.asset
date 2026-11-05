@@ -1,0 +1,158 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99bd3cb82ac25b64bb8347d92bafc97d, type: 3}
+  m_Name: ch01_dia_daniel_02_get_the_phone
+  m_EditorClassIdentifier: 
+  startNodeId: daniel_01
+  startFlag: 
+  endFlag: ch01_give_the_phone
+  nodes:
+  - nodeId: daniel_01
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u8FD9......\u8FD9\u662F\u8001\u7237\u5B50\u7684\u624B\u673A......\u8FD9\u662F\u4F60\u53BB\u62FF\u7684\u5417\uFF1F"
+    endsDialogue: 0
+    choices:
+    - buttonText: "\u662F\u7684\uFF0C\u6211\u53BB2\u53F7\u697C\u62FF\u5230\u7684\u3002"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: 
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: daniel_02
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u53EF\u4EE5\u90A3\u91CC\u4E0D\u662F\u6709\u602A\u7269\u5417\uFF0C\u4F46\u4F60\u8FD8\u662F\u62FF\u5230\u4E86......"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_03
+    speakerName: 
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: ......
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_04
+    speakerName: 
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u4E39\u5C3C\u5C14\u6C89\u9ED8\u4E86\u4E00\u4F1A\uFF0C\u4F60\u9690\u7EA6\u542C\u5230\u4ED6\u5728\u8F7B\u8F7B\u62BD\u564E\u3002"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_05
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u6211\u5411\u4F60\u9053\u6B49\uFF0C\u58EB\u5175\uFF0C\u524D\u9762\u5BF9\u4F60\u62B1\u4E86\u592A\u5927\u7684\u654C\u610F\uFF0C\u53EF\u662F\u6CA1\u60F3\u5230\u4F60\u5E2E\u4E86\u6211\u4EEC\u8FD9\u4E48\u591A\uFF0C\u4E0D\u7BA1\u662F\u7D22\u83F2\u4E9A\u7684\u836F\u8FD8\u662F\u8001\u7237\u5B50\u7684\u624B\u673A\uFF0C\u6211......\u62B1\u6B49\u3002"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_06
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u707E\u96BE\u521A\u5F00\u59CB\uFF0C\u8001\u7237\u5B50\u5728\u533B\u9662\u91CC\u4F4F\u9662\uFF0C\u4E00\u5207\u90FD\u592A\u7A81\u7136\u4E86\uFF0C\u5F53\u65F6\u6211\u5E76\u4E0D\u5728\u4ED6\u8EAB\u8FB9\u3002\u4ED6\u7ED9\u6211\u6253\u4E86\u5F88\u591A\u4E2A\u7535\u8BDD\uFF0C\u76F4\u5230\u6211\u53D1\u73B0\u7684\u65F6\u5019\uFF0C\u66B4\u4E71\u5DF2\u7ECF\u5F00\u59CB\u4E86\u3002"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_07
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u7B49\u6211\u8D76\u5230\u7684\u65F6\u5019\uFF0C\u8001\u7237\u5B50\u4ED6......\u5DF2\u7ECF\u5FEB\u4E0D\u884C\u4E86\u3002\u7B49\u5230\u64A4\u9000\u7684\u65F6\u5019\uFF0C\u6211\u4E5F\u6CA1\u627E\u5230\u4ED6\u7684\u624B\u673A\uFF0C\u4F46\u6211\u77E5\u9053\u5B83\u4E00\u5B9A\u57282\u53F7\u697C\u7684\u67D0\u5904\u3002"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_08
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u8FD9\u662F\u6211\u7236\u4EB2\u6700\u540E\u65F6\u523B\u4E0E\u6211\u8054\u7CFB\u7684\u624B\u673A\uFF0C\u8C22\u8C22\u4F60\uFF0C\u58EB\u5175......"
+    endsDialogue: 0
+    choices:
+    - buttonText: "\u8282\u54C0\uFF0C\u6211\u4EEC\u4E5F\u5F97\u597D\u597D\u6D3B\u4E0B\u53BB\u3002"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: 
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: daniel_09
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u662F\u554A\uFF0C\u6D3B\u7740\u624D\u6709\u5E0C\u671B......"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_10
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u58EB\u5175\uFF0C\u5728\u6211\u770B\u6765\u8054\u90A6\u662F\u6076\u9B54\uFF0C\u4ED6\u5BF9\u4E8E\u7070\u6E2F\u5E02\u6C11\u7684\u6B7B\u6D3B\u4E0D\u7BA1\u4E0D\u987E\uFF0C\u4F46\u4F60\u662F\u4E2A\u597D\u4EBA\u3002\u5982\u679C\u4F60\u60F3\u8FFD\u4E0A\u4F60\u7684\u961F\u4F0D\uFF0C\u6211\u8FD9\u91CC\u4E5F\u6709\u53EF\u80FD\u5BF9\u4F60\u6709\u5E2E\u52A9\u7684\u4FE1\u606F\u3002"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_11
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u524D\u5929\u8054\u90A6\u519B\u961F\u66FE\u5728\u533B\u9662\u65C1\u8FB9\u7684\u96A7\u9053\u53E3\u77ED\u6682\u6574\u987F\uFF0C\u6211\u524D\u53BB\u4E0E\u4ED6\u4EEC\u8054\u7CFB\uFF0C\u5E0C\u671B\u4ED6\u4EEC\u80FD\u5E26\u4E0A\u5269\u4E0B\u7684\u7070\u6E2F\u5E78\u5B58\u8005\u3002"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_12
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u4F46\u662F\u4ED6\u4EEC\u8868\u793A\u4E0A\u5934\u6709\u65B0\u7684\u547D\u4EE4\uFF0C\u6551\u52A9\u7070\u6E2F\u5E78\u5B58\u8005\u7684\u4F18\u5148\u7EA7\u4E0B\u8C03\uFF0C\u800C\u662F\u8981\u79BB\u5F00\u7070\u6E2F\u524D\u5F80\u4E0B\u4E00\u4E2A\u4EFB\u52A1\u5730\u70B9\u3002"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_13
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u8D77\u521D\u6211\u4EE5\u4E3A\u519B\u961F\u5355\u7EAF\u662F\u4E0D\u60F3\u6551\u6211\u4EEC\uFF0C\u4F46\u7ED3\u5408\u4E4B\u540E\u53D1\u751F\u7684\u4E8B\u548C\u4F60\u7684\u51FA\u73B0\uFF0C\u6216\u8BB8\u771F\u7684\u6709\u4EC0\u4E48\u66F4\u91CD\u8981\u7684\u4EFB\u52A1\u3002"
+    endsDialogue: 0
+    choices: []
+  - nodeId: daniel_14
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u5728\u4ED6\u4EEC\u4E34\u8D70\u4E4B\u524D\uFF0C\u4E00\u540D\u519B\u5B98\u628A\u4E00\u628A\u94A5\u5319\u4EA4\u7ED9\u4E86\u6211\uFF0C\u521A\u60F3\u548C\u6211\u8BF4\u4EC0\u4E48\uFF0C\u7A81\u7136\u65E0\u7EBF\u7535\u6765\u4E86\u6D88\u606F\uFF0C\u4ED6\u5C31\u5E26\u961F\u5306\u5306\u79BB\u5F00\u4E86\u3002"
+    endsDialogue: 0
+    choices:
+    - buttonText: "\uFF08\u8FD9\u540D\u519B\u5B98\u6216\u8BB8\u662F\u54C8\u73C0\u4E2D\u58EB\uFF09"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: 
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: daniel_15
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u6BD5\u7ADF\u4F60\u4E5F\u662F\u8054\u90A6\u519B\u961F\u7684\u4EBA\uFF0C\u6216\u8BB8\u90A3\u91CC\u6709\u5BF9\u4F60\u6709\u7528\u7684\u4FE1\u606F\u5427\u3002"
+    endsDialogue: 0
+    choices:
+    - buttonText: "\u8C22\u8C22\u4F60\u63D0\u4F9B\u7684\u4FE1\u606F\u3002"
+      requiredFlags: []
+      forbiddenFlags: []
+      nextNodeId: 
+      onSelected:
+        m_PersistentCalls:
+          m_Calls: []
+  - nodeId: daniel_16
+    speakerName: "\u4E39\u5C3C\u5C14"
+    speakerColor: {r: 1, g: 1, b: 1, a: 1}
+    portrait: {fileID: 0}
+    text: "\u522B\u5BA2\u6C14\uFF0C\u6211\u6162\u6162\u5F00\u59CB\u540C\u610F\u5A01\u5EC9\u7684\u8BF4\u6CD5\uFF0C\u4E92\u76F8\u5E2E\u52A9\u603B\u6BD4\u72EC\u81EA\u4E00\u4EBA\u66F4\u6709\u5E0C\u671B\u3002"
+    endsDialogue: 0
+    choices: []
