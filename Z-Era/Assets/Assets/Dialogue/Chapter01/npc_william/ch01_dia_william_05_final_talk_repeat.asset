@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99bd3cb82ac25b64bb8347d92bafc97d, type: 3}
-  m_Name: ch01_dia_sophia_08_get_the_phone
+  m_Name: ch01_dia_william_05_final_talk_repeat
   m_EditorClassIdentifier: 
-  startNodeId: sophia_01
+  startNodeId: william_01
   startFlag: 
   endFlag: 
   nodes:
-  - nodeId: sophia_01
-    speakerName: "\u7D22\u83F2\u4E9A"
+  - nodeId: william_01
+    speakerName: "\u5A01\u5EC9"
     speakerColor: {r: 1, g: 1, b: 1, a: 1}
     portrait: {fileID: 0}
-    text: "\u770B\u6765\u4F60\u62FF\u5230\u4E86\u624B\u673A\uFF0C\u628A\u4ED6\u7ED9\u4E39\u5C3C\u5C14\u770B\u770B\u5427\u3002"
+    text: "\u795D\u4F60\u597D\u8FD0\uFF0C\u58EB\u5175\u3002"
     endsDialogue: 0
     choices: []

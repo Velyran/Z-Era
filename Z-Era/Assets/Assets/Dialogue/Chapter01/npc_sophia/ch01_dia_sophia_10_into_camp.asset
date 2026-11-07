@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99bd3cb82ac25b64bb8347d92bafc97d, type: 3}
-  m_Name: ch01_dia_sophia_07_complete_teresa_request_repeat
+  m_Name: ch01_dia_sophia_10_into_camp
   m_EditorClassIdentifier: 
   startNodeId: sophia_01
   startFlag: 
@@ -20,5 +20,6 @@ MonoBehaviour:
     speakerName: "\u7D22\u83F2\u4E9A"
     speakerColor: {r: 1, g: 1, b: 1, a: 1}
     portrait: {fileID: 0}
-    text: "\u770B\u6765\u4F60\u5E2E\u4E86\u7279\u857E\u838E\u4E00\u4E2A\u5927\u5FD9\uFF0C\u63A5\u4E0B\u6765\u53EF\u4EE5\u53BB\u5E2E\u4E39\u5C3C\u5C14\u7684\u5927\u5FD9\u4E86\u3002"
+    text: "\u8425\u5730\u91CC\u6216\u8BB8\u4F1A\u6709\u4F60\u9700\u8981\u7684\u4FE1\u606F\uFF0C\u53BB\u770B\u770B\u5427\u3002"
+    endsDialogue: 0
     choices: []

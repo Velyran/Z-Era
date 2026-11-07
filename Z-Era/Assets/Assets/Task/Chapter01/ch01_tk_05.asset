@@ -14,10 +14,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   questId: ch01_tk_05
   title: "\u8425\u5730"
-  description: 
+  description: "\u6839\u636E\u4E39\u5C3C\u5C14\u63D0\u4F9B\u7684\u4FE1\u606F\uFF0C\u8054\u90A6\u519B\u961F\u66FE\u5728\u6B64\u6709\u8FC7\u4E00\u4E2A\u4E34\u65F6\u8425\u5730\uFF0C\u90A3\u91CC\u6216\u8BB8\u7559\u4E0B\u6765\u6709\u7528\u7684\u4FE1\u606F\u3002"
   sceneName: 
-  objectives: []
-  prerequisiteQuestIds: []
+  objectives:
+  - objectiveId: ch01_tk_05_into_temporary_camp
+    description: "\u524D\u5F80\u8054\u90A6\u519B\u961F\u4E34\u65F6\u8425\u5730"
+    requiredAmount: 1
+    completeFlag: ch01_temporary_camp_door_15_opened
+  - objectiveId: ch01_tk_05_search_for_information
+    description: "\u5728\u8425\u5730\u4E2D\u67E5\u627E\u961F\u4F0D\u53BB\u5411\u7684\u76F8\u5173\u4FE1\u606F"
+    requiredAmount: 3
+    completeFlag: 
+  - objectiveId: ch01_tk_05_back_to_platform
+    description: "\u8FD4\u56DE\u5E78\u5B58\u8005\u5E73\u53F0\u67E5\u770B\u5A01\u5EC9\u662F\u5426\u8FD4\u56DE"
+    requiredAmount: 1
+    completeFlag: ch01_william_final_talk_finished
+  prerequisiteQuestIds:
+  - ch01_tk_04
   requiredFlags: []
   forbiddenFlags: []
   flagsToSetOnAccept: []
@@ -27,4 +40,16 @@ MonoBehaviour:
       m_Calls: []
   onComplete:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 11400000, guid: 944afbef442baef479b1033521b0f783, type: 2}
+        m_TargetAssemblyTypeName: QuestAsset, Assembly-CSharp
+        m_MethodName: StartFromEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2

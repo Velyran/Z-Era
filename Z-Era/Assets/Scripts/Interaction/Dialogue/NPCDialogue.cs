@@ -144,6 +144,12 @@ public class NPCDialogue : MonoBehaviour
         interactHalfAngle = Mathf.Clamp(halfAngle, 0f, 180f);
     }
 
+    /// <summary>
+    /// 本组件发起的对话完整结束时触发，参数为本组件。
+    /// 供章节控制器等外部系统按"具体是哪个 NPC/物件"计数。
+    /// </summary>
+    public event Action<NPCDialogue> DialogueCompleted;
+
     private Camera cachedCamera;
     private DialogueRunner dialogueRunner;
 
@@ -305,6 +311,8 @@ public class NPCDialogue : MonoBehaviour
             }
 
             awaitingDialogueAsset = null;
+
+            DialogueCompleted?.Invoke(this);
         }
 
         bool talkAvailable = IsTalkAvailable();

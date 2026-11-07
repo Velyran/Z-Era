@@ -9,6 +9,9 @@ using UnityEngine;
 /// 设为检查器里的拾取初始值（默认 20/0）。
 /// 另按对话资产为 Daniel/William/Sophia/Teresa 四个 NPC 各计一次
 /// 完成对话，累计 ch01_tk_01_talktopeople 的目标进度。
+/// 并按营地三本书各自 NPC Dialogue 的对话完成事件，各累计一次
+/// ch01_tk_05_search_for_information 的目标进度；达标后置位
+/// 检查器里配置的标记。
 /// </summary>
 public class Chapter01Controller : MonoBehaviour
 {
@@ -282,6 +285,45 @@ public class Chapter01Controller : MonoBehaviour
     private Vector3 armyCampKeyRotation =
         new Vector3(0f, -90f, -90f);
 
+    [Header("营地信息搜集（ch01_tk_05）")]
+
+    [Tooltip("任务 Id（QuestManager），与 ch01_tk_05 任务资产一致")]
+    [SerializeField]
+    private string searchQuestId = "ch01_tk_05";
+
+    [Tooltip("目标 Id：任务资产里的 " +
+        "ch01_tk_05_search_for_information")]
+    [SerializeField]
+    private string searchObjectiveId =
+        "ch01_tk_05_search_for_information";
+
+    [Tooltip("每本书首次完成对话时为该目标增加的进度")]
+    [Min(1)]
+    [SerializeField]
+    private int searchProgressAmount = 1;
+
+    [Tooltip("营地里的三本书：拖入每本书上的 NPC Dialogue 组件。" +
+        "每本书完整对话一次计数一次，重复阅读不重复计数")]
+    [SerializeField]
+    private List<NPCDialogue> informationBooks =
+        new List<NPCDialogue>();
+
+    [Tooltip("目标 ch01_tk_05_search_for_information 达标" +
+        "（三本书都读过）时要置位的标记；" +
+        "留空则只完成目标、不置位")]
+    [SerializeField]
+    private string searchCompleteFlag;
+
+    [Tooltip("Search Complete Flag 置位时要启用的 William NPC" +
+        "（拖入 William 的根物体）；留空则跳过")]
+    [SerializeField]
+    private GameObject searchWilliamNpc;
+
+    // 已计过数的书：同一本书重复阅读不再计数
+    //（内存态，场景重载后重置）
+    private readonly HashSet<NPCDialogue> countedInformationBooks =
+        new HashSet<NPCDialogue>();
+
     // 手持 Glock 上的 WeaponController，按 glockObject 自动解析并缓存
     private WeaponController cachedGlockWeapon;
 
@@ -328,6 +370,13 @@ public class Chapter01Controller : MonoBehaviour
         ApplyCrossPickables(
             DialogueFlags.HasFlag(CrossQuestAcceptedFlag)
         );
+
+        // 营地信息搜集已完成（标记已置位）：William 应处于启用状态。
+        if (!string.IsNullOrWhiteSpace(searchCompleteFlag) &&
+            DialogueFlags.HasFlag(searchCompleteFlag))
+        {
+            EnableSearchWilliam();
+        }
     }
 
     private void Start()
@@ -338,11 +387,13 @@ public class Chapter01Controller : MonoBehaviour
     private void OnEnable()
     {
         DialogueFlags.FlagSet += OnFlagSet;
+        SubscribeInformationBooks();
     }
 
     private void OnDisable()
     {
         DialogueFlags.FlagSet -= OnFlagSet;
+        UnsubscribeInformationBooks();
         UnsubscribeRunner();
         UnsubscribeQuestEvents();
     }
@@ -387,15 +438,24 @@ public class Chapter01Controller : MonoBehaviour
     {
         if (asset == null ||
             objective == null ||
-            current < required ||
-            asset.QuestId != GatherQuestId ||
-            objective.objectiveId != GatherObjectiveId)
+            current < required)
         {
             return;
         }
 
-        SetGatherResourcesFlag();
-        ApplyTeresaGatherState();
+        if (asset.QuestId == GatherQuestId &&
+            objective.objectiveId == GatherObjectiveId)
+        {
+            SetGatherResourcesFlag();
+            ApplyTeresaGatherState();
+            return;
+        }
+
+        if (asset.QuestId == searchQuestId &&
+            objective.objectiveId == searchObjectiveId)
+        {
+            SetSearchCompleteFlag();
+        }
     }
 
     // 标记留空则不置位；重复置位由 DialogueFlags 自身去重。
@@ -407,6 +467,29 @@ public class Chapter01Controller : MonoBehaviour
         }
 
         DialogueFlags.SetFlag(gatherResourcesCompleteFlag, true);
+    }
+
+    // 信息搜集目标达标（三本书都读过）时置位检查器配置的标记；
+    // 留空则不置位，重复置位由 DialogueFlags 自身去重。
+    private void SetSearchCompleteFlag()
+    {
+        if (string.IsNullOrWhiteSpace(searchCompleteFlag))
+        {
+            return;
+        }
+
+        DialogueFlags.SetFlag(searchCompleteFlag, true);
+    }
+
+    // 启用 Search Complete Flag 达标后应出现的 William；未赋值时跳过。
+    private void EnableSearchWilliam()
+    {
+        if (searchWilliamNpc == null)
+        {
+            return;
+        }
+
+        searchWilliamNpc.SetActive(true);
     }
 
     // 物资搜集完成时 Teresa 的摆位与动画切换：
@@ -492,6 +575,62 @@ public class Chapter01Controller : MonoBehaviour
 
         teresaNpcDialogue.SetInteractHalfAngle(
             teresaInteractHalfAngle
+        );
+    }
+
+    // 订阅检查器里三本书的对话完成事件；先减后加，重复启用不会重复挂接。
+    private void SubscribeInformationBooks()
+    {
+        if (informationBooks == null)
+        {
+            return;
+        }
+
+        foreach (NPCDialogue book in informationBooks)
+        {
+            if (book == null)
+            {
+                continue;
+            }
+
+            book.DialogueCompleted -= OnInformationBookDialogueCompleted;
+            book.DialogueCompleted += OnInformationBookDialogueCompleted;
+        }
+    }
+
+    private void UnsubscribeInformationBooks()
+    {
+        if (informationBooks == null)
+        {
+            return;
+        }
+
+        foreach (NPCDialogue book in informationBooks)
+        {
+            if (book == null)
+            {
+                continue;
+            }
+
+            book.DialogueCompleted -= OnInformationBookDialogueCompleted;
+        }
+    }
+
+    // 某本书的对话完整结束：该书未计过数时，为
+    // ch01_tk_05_search_for_information 增加进度；重复阅读不再计数。
+    private void OnInformationBookDialogueCompleted(NPCDialogue book)
+    {
+        if (book == null || countedInformationBooks.Contains(book))
+        {
+            return;
+        }
+
+        countedInformationBooks.Add(book);
+
+        QuestManager.AddProgress(
+            searchQuestId,
+            searchObjectiveId,
+            searchProgressAmount
         );
     }
 
@@ -628,6 +767,14 @@ public class Chapter01Controller : MonoBehaviour
                 armyCampKeyRotation
             );
 
+            return;
+        }
+
+        // 营地信息搜集完成：重新启用 William。
+        if (!string.IsNullOrWhiteSpace(searchCompleteFlag) &&
+            flagName == searchCompleteFlag)
+        {
+            EnableSearchWilliam();
             return;
         }
 
