@@ -49,6 +49,9 @@ public class ZombieEffects : MonoBehaviour
     [Tooltip("是否完全溶解")]
     public bool isFullyDissolved = false;
 
+    // 溶解材质是否已准备（实例化并换到 renderer 上）
+    private bool dissolveMaterialPrepared;
+
     private void Start()
     {
         if (rend == null)
@@ -56,10 +59,7 @@ public class ZombieEffects : MonoBehaviour
             rend = GetComponentInChildren<Renderer>();
         }
 
-        if (rend != null)
-        {
-            mat = rend.material;
-        }
+        PrepareDissolveMaterial();
     }
 
     /// <summary>
@@ -153,11 +153,78 @@ public class ZombieEffects : MonoBehaviour
         );
     }
 
+    // 溶解材质准备（幂等，只做一次），按优先级：
+    // 1. 检查器配置了 Mat（对应皮肤的溶解材质）→ 用它；
+    // 2. 自动匹配：外壳当前材质名 + "_Dissolve" 到
+    //    Resources/ZombieDissolve/ 下查（生成工具的输出命名约定），
+    //    查到即用——各皮肤无需任何手动赋值；
+    // 3. 兜底：外壳材质本身是溶解材质（如 Father_Male_01 的
+    //    历史配置）→ 直接接管。
+    // 命中的溶解材质都会实例化一份换到 renderer 上（每僵尸
+    // 独立实例，SetFloat 不会改到材质资产影响其它同皮肤僵尸）。
+    private void PrepareDissolveMaterial()
+    {
+        if (dissolveMaterialPrepared)
+        {
+            return;
+        }
+
+        dissolveMaterialPrepared = true;
+
+        if (rend == null)
+        {
+            rend = GetComponentInChildren<Renderer>();
+        }
+
+        if (rend == null)
+        {
+            return;
+        }
+
+        if (mat == null)
+        {
+            mat = ResolveDissolveMaterialByConvention();
+        }
+
+        if (mat != null)
+        {
+            mat = Instantiate(mat);
+            rend.material = mat;
+        }
+        else
+        {
+            mat = rend.material;
+        }
+    }
+
+    // 命名约定自动匹配：外壳当前主材质名 + "_Dissolve"，
+    // 到 Resources/ZombieDissolve/ 下加载（生成工具的输出
+    // 目录与命名约定）。查不到返回 null，走兜底逻辑。
+    private Material ResolveDissolveMaterialByConvention()
+    {
+        Material skinMaterial = rend.sharedMaterial;
+
+        if (skinMaterial == null)
+        {
+            return null;
+        }
+
+        return Resources.Load<Material>(
+            "ZombieDissolve/" +
+            skinMaterial.name +
+            "_Dissolve"
+        );
+    }
+
     /// <summary>
     /// Zombie 死亡后开始溶解。
     /// </summary>
     public void ZombieDissolve()
     {
+        // Start 之前就可能被外部调用（组件运行时动态添加等），
+        // 这里兜底再准备一次。
+        PrepareDissolveMaterial();
+
         if (mat == null)
         {
             return;

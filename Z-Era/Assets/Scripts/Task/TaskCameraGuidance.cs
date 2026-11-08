@@ -52,6 +52,12 @@ public class TaskCameraGuidance : MonoBehaviour
     [SerializeField]
     private float returnDuration = 1.5f;
 
+    [Tooltip("运镜完整结束（相机返回初始位姿）后置为 true 的标记；" +
+        "留空或未配置运镜（Camera 与 Camera Target 没配齐，" +
+        "直接显示指引标志）则不设置")]
+    [SerializeField]
+    private string sequenceEndFlag;
+
     [Tooltip("缓入缓出曲线：横轴 0~1 为线性进度，纵轴为实际应用进度；默认两端平缓")]
     [SerializeField]
     private AnimationCurve easing =
@@ -250,6 +256,13 @@ public class TaskCameraGuidance : MonoBehaviour
         // 再锁一次，确保结束后鼠标仍处于锁定状态。
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        // 运镜结束（已返回初始位姿）后置位标记；留空则不设置，
+        // 重复置位由 DialogueFlags 自身去重。
+        if (!string.IsNullOrWhiteSpace(sequenceEndFlag))
+        {
+            DialogueFlags.SetFlag(sequenceEndFlag, true);
+        }
 
         ShowMarker();
     }

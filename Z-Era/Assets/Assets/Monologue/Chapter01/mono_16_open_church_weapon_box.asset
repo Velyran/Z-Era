@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7735a702022844a4ab02a9f6c34da2b9, type: 3}
+  m_Name: mono_16_open_church_weapon_box
+  m_EditorClassIdentifier: 
+  segments:
+  - "\u4F7F\u7528\u7279\u857E\u838E\u7ED9\u7684\u94A5\u5319\u6253\u5F00\u4E86\u6559\u5802\u6B66\u5668\u7BB1\uFF0C\u91CC\u9762\u6709\u4E00\u628A\u7EF4\u514B\u6258\u51B2\u950B\u67AA\u3002"
+  charactersPerSecond: 50
+  holdDuration: 4
+  fadeDuration: 1
+  segmentInterval: 0
+  requiredFlags:
+  - ch01_open_church_weapon_box
+  forbiddenFlags: []
+  flagsToSetOnShown: []

@@ -13,11 +13,24 @@ MonoBehaviour:
   m_Name: ch01_tk_06
   m_EditorClassIdentifier: 
   questId: ch01_tk_06
-  title: "\u8FFD\u8D76"
-  description: 
+  title: "\u89E3\u6CD5"
+  description: "\u5A01\u5EC9\u627E\u5230\u4E86\u901A\u8FC7\u5F53\u524D\u533A\u57DF\u7684\u65B9\u6CD5\uFF0C\u90A3\u5C31\u662F\u4ECE\u529E\u516C\u5927\u697C\u4E2D\u7A7F\u8FC7\uFF0C\u53EA\u4E0D\u8FC7\u5F97\u627E\u5230\u529E\u516C\u5927\u697C\u53E6\u4E00\u6247\u95E8\u7684\u94A5\u5319\u3002"
   sceneName: 
-  objectives: []
-  prerequisiteQuestIds: []
+  objectives:
+  - objectiveId: ch01_tk_06_to_office_building
+    description: "\u524D\u5F80\u5A01\u5EC9\u6240\u8BF4\u7684\u529E\u516C\u5927\u697C"
+    requiredAmount: 1
+    completeFlag: ch01_office_door_16_opened
+  - objectiveId: ch01_tk_06_find_key
+    description: "\u627E\u5230\u6253\u5F00\u53E6\u4E00\u6247\u95E8\u7684\u94A5\u5319"
+    requiredAmount: 1
+    completeFlag: ch01_tk_06_find_key_finished
+  - objectiveId: ch01_tk_06_open_another_door
+    description: "\u6253\u5F00\u529E\u516C\u5927\u697C\u7684\u53E6\u4E00\u6247\u95E8"
+    requiredAmount: 1
+    completeFlag: ch01_tk_06_start
+  prerequisiteQuestIds:
+  - ch01_tk_05
   requiredFlags: []
   forbiddenFlags: []
   flagsToSetOnAccept: []
@@ -27,4 +40,16 @@ MonoBehaviour:
       m_Calls: []
   onComplete:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 11400000, guid: b9dece09b60a29847a8aaccc42600a31, type: 2}
+        m_TargetAssemblyTypeName: QuestAsset, Assembly-CSharp
+        m_MethodName: StartFromEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2

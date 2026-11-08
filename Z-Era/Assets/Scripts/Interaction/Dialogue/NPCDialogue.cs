@@ -49,6 +49,12 @@ public class NPCDialogue : MonoBehaviour
     [SerializeField]
     private string talkedFlag;
 
+    [Tooltip("成功触发交互时立即设置的标记（对准按 E 或进入触发器），" +
+        "留空则不设置；本物体没有可用对话资产时，仍可仅凭该标记" +
+        "完成一次交互置位")]
+    [SerializeField]
+    private string interactFlag;
+
     [Tooltip("勾选后该 NPC 只能完整对话一次，之后不再提供交互")]
     [SerializeField]
     private bool playOnce;
@@ -366,6 +372,13 @@ public class NPCDialogue : MonoBehaviour
         {
             DialogueAsset asset = SelectDialogue();
 
+            // 交互触发即刻置位标记（留空则不设置，
+            // 重复置位由 DialogueFlags 自身去重）。
+            if (!string.IsNullOrWhiteSpace(interactFlag))
+            {
+                DialogueFlags.SetFlag(interactFlag, true);
+            }
+
             if (asset != null)
             {
                 awaitingEnd = true;
@@ -390,12 +403,18 @@ public class NPCDialogue : MonoBehaviour
         );
     }
 
-    // 当前是否可对话：没有 playOnce 限制，且有可用资产。
+    // 当前是否可交互：没有 playOnce 限制，且有可用资产；
+    // 配了 interactFlag 时即使没有可用资产也允许触发交互。
     private bool IsTalkAvailable()
     {
         if (playOnce && hasTalked)
         {
             return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(interactFlag))
+        {
+            return true;
         }
 
         return SelectDialogue() != null;

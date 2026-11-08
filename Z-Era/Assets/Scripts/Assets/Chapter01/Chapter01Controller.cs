@@ -67,6 +67,15 @@ public class Chapter01Controller : MonoBehaviour
     private const string GatherObjectiveId =
         "ch01_tk_03_gather_resources";
 
+    // 寻宝目标：ch01_tk_07 的这个目标达标时，
+    // 置位检查器里配置的标记。
+    private const string TreasureHuntQuestId = "ch01_tk_07";
+    private const string TreasureHuntObjectiveId =
+        "ch01_tk_07_hunt_treasure";
+
+    // Vector 弹匣可拾取标记：置位后才启用弹匣的拾取组件。
+    private const string VectorMagPickFlag = "ch01_can_pick_vector_mag";
+
     // 接受 Teresa 的取回十字架委托（对话选项置位）后，
     // 启用十字架上的 PickableItem。
     private const string CrossQuestAcceptedFlag = "agree_teresa";
@@ -82,6 +91,12 @@ public class Chapter01Controller : MonoBehaviour
 
     // 交出手机时置位：手机离开背包，同时加入临时营地钥匙。
     private const string PhoneGivenFlag = "ch01_give_the_phone";
+
+    // 开箱标记：置位时对应箱盖移动旋转到检查器配置的位姿。
+    private const string WeaponBoxOpenFlag =
+        "ch01_open_church_weapon_box";
+    private const string AmmoBoxOpenFlag =
+        "ch01_open_church_ammo_box";
 
     // 黑屏演出等锁的最长等待时间（秒）：
     // 对话收尾要等溶解播完，超过这个时间就放弃上锁继续演出。
@@ -285,6 +300,20 @@ public class Chapter01Controller : MonoBehaviour
     private Vector3 armyCampKeyRotation =
         new Vector3(0f, -90f, -90f);
 
+    [Header("武器箱/弹药箱对话（ch01_get_weapon_crate_key）")]
+
+    [Tooltip("标记 ch01_get_weapon_crate_key 置位时要启用的 " +
+        "NPC Dialogue 组件（拖入 Vector_Box 下的该组件）；" +
+        "留空则跳过")]
+    [SerializeField]
+    private NPCDialogue weaponCrateBoxDialogue;
+
+    [Tooltip("标记 ch01_get_weapon_crate_key 置位时要启用的 " +
+        "NPC Dialogue 组件（拖入 Vector_Ammo_Box 下的该组件）；" +
+        "留空则跳过")]
+    [SerializeField]
+    private NPCDialogue weaponAmmoBoxDialogue;
+
     [Header("营地信息搜集（ch01_tk_05）")]
 
     [Tooltip("任务 Id（QuestManager），与 ch01_tk_05 任务资产一致")]
@@ -318,6 +347,85 @@ public class Chapter01Controller : MonoBehaviour
         "（拖入 William 的根物体）；留空则跳过")]
     [SerializeField]
     private GameObject searchWilliamNpc;
+
+    [Header("寻宝完成标记（ch01_tk_07_hunt_treasure）")]
+
+    [Tooltip("目标 ch01_tk_07_hunt_treasure 达标（带回贵重物）时" +
+        "要置位的标记；留空则只完成目标、不置位")]
+    [SerializeField]
+    private string treasureHuntCompleteFlag;
+
+    [Header("开箱盖演出（武器箱 / 弹药箱）")]
+
+    [Tooltip("标记 ch01_open_church_weapon_box 置位时要移动的" +
+        "武器箱箱盖（拖入 Weapon Box Lid 的 Transform）")]
+    [SerializeField]
+    private Transform weaponBoxLid;
+
+    [Tooltip("武器箱箱盖的目标局部坐标（相对父物体，" +
+        "与 Inspector 显示的 Position 一致，直接照抄即可）")]
+    [SerializeField]
+    private Vector3 weaponBoxLidPosition;
+
+    [Tooltip("武器箱箱盖的目标旋转（欧拉角，角度制，" +
+        "与 Inspector 显示的 Rotation 一致）")]
+    [SerializeField]
+    private Vector3 weaponBoxLidEulerAngles;
+
+    [Tooltip("武器箱箱盖的变换速度：位移按 米/秒、" +
+        "旋转按 度/秒 计")]
+    [SerializeField, Min(0.1f)]
+    private float weaponBoxLidSpeed = 90f;
+
+    [Tooltip("武器箱箱盖移动到位（打开完成）后置位的标记；" +
+        "留空则不设置")]
+    [SerializeField]
+    private string weaponBoxLidOpenedFlag;
+
+    [Tooltip("标记 ch01_open_church_ammo_box 置位时要移动的" +
+        "弹药箱箱盖（拖入 Ammo Box Lid 的 Transform）")]
+    [SerializeField]
+    private Transform ammoBoxLid;
+
+    [Tooltip("弹药箱箱盖的目标局部坐标（相对父物体，" +
+        "与 Inspector 显示的 Position 一致，直接照抄即可）")]
+    [SerializeField]
+    private Vector3 ammoBoxLidPosition;
+
+    [Tooltip("弹药箱箱盖的目标旋转（欧拉角，角度制，" +
+        "与 Inspector 显示的 Rotation 一致）")]
+    [SerializeField]
+    private Vector3 ammoBoxLidEulerAngles;
+
+    [Tooltip("弹药箱箱盖的变换速度：位移按 米/秒、" +
+        "旋转按 度/秒 计")]
+    [SerializeField, Min(0.1f)]
+    private float ammoBoxLidSpeed = 90f;
+
+    [Tooltip("弹药箱箱盖移动到位（打开完成）后置位的标记；" +
+        "留空则不设置")]
+    [SerializeField]
+    private string ammoBoxLidOpenedFlag;
+
+    [Tooltip("武器箱箱盖打开标记置位后要禁用的 NPC Dialogue " +
+        "组件列表（数量自定义，逐项拖入）；留空则不禁用")]
+    [SerializeField]
+    private List<NPCDialogue> weaponBoxOpenedDisableDialogues =
+        new List<NPCDialogue>();
+
+    [Tooltip("弹药箱箱盖打开标记置位后要禁用的 NPC Dialogue " +
+        "组件列表（数量自定义，逐项拖入）；留空则不禁用")]
+    [SerializeField]
+    private List<NPCDialogue> ammoBoxOpenedDisableDialogues =
+        new List<NPCDialogue>();
+
+    [Header("Vector 弹匣拾取（ch01_can_pick_vector_mag）")]
+
+    [Tooltip("标记 ch01_can_pick_vector_mag 置位后才启用的拾取组件" +
+        "（拖入两个 Vector 弹匣上的 PickableItem）")]
+    [SerializeField]
+    private List<PickableItem> vectorMagPickables =
+        new List<PickableItem>();
 
     // 已计过数的书：同一本书重复阅读不再计数
     //（内存态，场景重载后重置）
@@ -369,6 +477,57 @@ public class Chapter01Controller : MonoBehaviour
         // 十字架的拾取组件：接受 Teresa 委托前一律禁用。
         ApplyCrossPickables(
             DialogueFlags.HasFlag(CrossQuestAcceptedFlag)
+        );
+
+        // 武器箱/弹药箱对话：拿到武器箱钥匙（标记已置位）时启用。
+        if (DialogueFlags.HasFlag(WeaponCrateKeyFlag))
+        {
+            EnableWeaponAmmoBoxDialogue();
+            EnableWeaponCrateBoxDialogue();
+        }
+
+        // 箱盖演出：开箱标记已置位（场景重进）时直接落位，
+        // 不再播放移动过程。
+        if (DialogueFlags.HasFlag(WeaponBoxOpenFlag))
+        {
+            SnapLidToTarget(
+                weaponBoxLid,
+                weaponBoxLidPosition,
+                weaponBoxLidEulerAngles
+            );
+        }
+
+        if (DialogueFlags.HasFlag(AmmoBoxOpenFlag))
+        {
+            SnapLidToTarget(
+                ammoBoxLid,
+                ammoBoxLidPosition,
+                ammoBoxLidEulerAngles
+            );
+        }
+
+        // 箱盖打开标记已置位（场景重进）：对应列表的对话保持禁用。
+        if (!string.IsNullOrWhiteSpace(weaponBoxLidOpenedFlag) &&
+            DialogueFlags.HasFlag(weaponBoxLidOpenedFlag))
+        {
+            ApplyDialoguesDisabled(
+                weaponBoxOpenedDisableDialogues,
+                true
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(ammoBoxLidOpenedFlag) &&
+            DialogueFlags.HasFlag(ammoBoxLidOpenedFlag))
+        {
+            ApplyDialoguesDisabled(
+                ammoBoxOpenedDisableDialogues,
+                true
+            );
+        }
+
+        // Vector 弹匣：标记已置位才允许拾取，未置位一律禁用。
+        ApplyVectorMagPickables(
+            DialogueFlags.HasFlag(VectorMagPickFlag)
         );
 
         // 营地信息搜集已完成（标记已置位）：William 应处于启用状态。
@@ -455,6 +614,13 @@ public class Chapter01Controller : MonoBehaviour
             objective.objectiveId == searchObjectiveId)
         {
             SetSearchCompleteFlag();
+            return;
+        }
+
+        if (asset.QuestId == TreasureHuntQuestId &&
+            objective.objectiveId == TreasureHuntObjectiveId)
+        {
+            SetTreasureHuntCompleteFlag();
         }
     }
 
@@ -467,6 +633,18 @@ public class Chapter01Controller : MonoBehaviour
         }
 
         DialogueFlags.SetFlag(gatherResourcesCompleteFlag, true);
+    }
+
+    // 寻宝目标达标（带回贵重物）时置位检查器配置的标记；
+    // 留空则不置位，重复置位由 DialogueFlags 自身去重。
+    private void SetTreasureHuntCompleteFlag()
+    {
+        if (string.IsNullOrWhiteSpace(treasureHuntCompleteFlag))
+        {
+            return;
+        }
+
+        DialogueFlags.SetFlag(treasureHuntCompleteFlag, true);
     }
 
     // 信息搜集目标达标（三本书都读过）时置位检查器配置的标记；
@@ -490,6 +668,94 @@ public class Chapter01Controller : MonoBehaviour
         }
 
         searchWilliamNpc.SetActive(true);
+    }
+
+    // 箱盖直接落到目标位姿（局部坐标语义）：场景重进时开箱
+    // 标记已置位，跳过移动过程一次性对齐；未赋值时跳过。
+    private void SnapLidToTarget(
+        Transform lid,
+        Vector3 targetPosition,
+        Vector3 targetEulerAngles
+    )
+    {
+        if (lid == null)
+        {
+            return;
+        }
+
+        lid.localPosition = targetPosition;
+        lid.localRotation = Quaternion.Euler(targetEulerAngles);
+    }
+
+    // 箱盖演出：按速度把箱盖在局部空间里移动旋转到目标位姿，
+    // 位移用 MoveTowards（米/秒），旋转用 RotateTowards（度/秒），
+    // 两者互不等待、各自到站即停；未赋值箱盖时告警跳过。
+    // 用局部坐标：与 Inspector 显示一致，检查器照抄即准，
+    // 父物体（箱体）演出期间不动，局部推进等价于世界推进。
+    private IEnumerator MoveLidToTarget(
+        Transform lid,
+        Vector3 targetPosition,
+        Vector3 targetEulerAngles,
+        float speed,
+        string openedFlag
+    )
+    {
+        if (lid == null)
+        {
+            Debug.LogWarning(
+                "Chapter01Controller：箱盖 Transform 未赋值，" +
+                    "开箱演出未执行。",
+                this
+            );
+
+            yield break;
+        }
+
+        Quaternion targetRotation =
+            Quaternion.Euler(targetEulerAngles);
+
+        while (lid.localPosition != targetPosition ||
+               lid.localRotation != targetRotation)
+        {
+            lid.localPosition = Vector3.MoveTowards(
+                lid.localPosition,
+                targetPosition,
+                speed * Time.deltaTime
+            );
+
+            lid.localRotation = Quaternion.RotateTowards(
+                lid.localRotation,
+                targetRotation,
+                speed * Time.deltaTime
+            );
+
+            yield return null;
+        }
+
+        // 到位（打开完成）后置位标记；留空则不设置，
+        // 重复置位由 DialogueFlags 自身去重。
+        if (!string.IsNullOrWhiteSpace(openedFlag))
+        {
+            DialogueFlags.SetFlag(openedFlag, true);
+        }
+    }
+
+    // 启用 Vector_Ammo_Box 下的 NPC Dialogue；未赋值时跳过。
+    private void EnableWeaponAmmoBoxDialogue()
+    {
+        if (weaponAmmoBoxDialogue != null)
+        {
+            weaponAmmoBoxDialogue.enabled = true;
+        }
+    }
+
+    // 启用 Vector_Box 下的 NPC Dialogue；未赋值时跳过。
+    private void EnableWeaponCrateBoxDialogue()
+    {
+        if (weaponCrateBoxDialogue != null)
+        {
+            weaponCrateBoxDialogue.enabled = true;
+        }
     }
 
     // 物资搜集完成时 Teresa 的摆位与动画切换：
@@ -746,7 +1012,8 @@ public class Chapter01Controller : MonoBehaviour
             return;
         }
 
-        // 拿到武器箱钥匙：加入背包；十字架已交还，从背包移除。
+        // 拿到武器箱钥匙：加入背包；十字架已交还，从背包移除；
+        // 启用 Vector_Box / Vector_Ammo_Box 下的 NPC Dialogue。
         if (flagName == WeaponCrateKeyFlag)
         {
             RemoveInventoryItem(priestCrossObjectName);
@@ -754,6 +1021,9 @@ public class Chapter01Controller : MonoBehaviour
                 weaponCrateKeyPrefab,
                 weaponCrateKeyRotation
             );
+
+            EnableWeaponAmmoBoxDialogue();
+            EnableWeaponCrateBoxDialogue();
 
             return;
         }
@@ -767,6 +1037,65 @@ public class Chapter01Controller : MonoBehaviour
                 armyCampKeyRotation
             );
 
+            return;
+        }
+
+        // 武器箱箱盖：移动旋转到检查器配置的位姿。
+        if (flagName == WeaponBoxOpenFlag)
+        {
+            StartCoroutine(MoveLidToTarget(
+                weaponBoxLid,
+                weaponBoxLidPosition,
+                weaponBoxLidEulerAngles,
+                weaponBoxLidSpeed,
+                weaponBoxLidOpenedFlag
+            ));
+
+            return;
+        }
+
+        // 弹药箱箱盖：移动旋转到检查器配置的位姿。
+        if (flagName == AmmoBoxOpenFlag)
+        {
+            StartCoroutine(MoveLidToTarget(
+                ammoBoxLid,
+                ammoBoxLidPosition,
+                ammoBoxLidEulerAngles,
+                ammoBoxLidSpeed,
+                ammoBoxLidOpenedFlag
+            ));
+
+            return;
+        }
+
+        // 武器箱盖已打开：禁用指定列表里的 NPC Dialogue。
+        if (!string.IsNullOrWhiteSpace(weaponBoxLidOpenedFlag) &&
+            flagName == weaponBoxLidOpenedFlag)
+        {
+            ApplyDialoguesDisabled(
+                weaponBoxOpenedDisableDialogues,
+                true
+            );
+
+            return;
+        }
+
+        // 弹药箱盖已打开：禁用指定列表里的 NPC Dialogue。
+        if (!string.IsNullOrWhiteSpace(ammoBoxLidOpenedFlag) &&
+            flagName == ammoBoxLidOpenedFlag)
+        {
+            ApplyDialoguesDisabled(
+                ammoBoxOpenedDisableDialogues,
+                true
+            );
+
+            return;
+        }
+
+        // Vector 弹匣变为可拾取。
+        if (flagName == VectorMagPickFlag)
+        {
+            ApplyVectorMagPickables(true);
             return;
         }
 
@@ -1154,6 +1483,47 @@ public class Chapter01Controller : MonoBehaviour
         }
 
         foreach (PickableItem pickable in crossPickables)
+        {
+            if (pickable == null)
+            {
+                continue;
+            }
+
+            pickable.enabled = unlocked;
+        }
+    }
+
+    // 批量启用/禁用一组 NPC Dialogue 组件；列表为空时跳过。
+    private void ApplyDialoguesDisabled(
+        List<NPCDialogue> dialogues,
+        bool disabled
+    )
+    {
+        if (dialogues == null)
+        {
+            return;
+        }
+
+        foreach (NPCDialogue dialogue in dialogues)
+        {
+            if (dialogue == null)
+            {
+                continue;
+            }
+
+            dialogue.enabled = !disabled;
+        }
+    }
+
+    // 启用/禁用 Vector 弹匣的拾取组件；列表为空时跳过。
+    private void ApplyVectorMagPickables(bool unlocked)
+    {
+        if (vectorMagPickables == null)
+        {
+            return;
+        }
+
+        foreach (PickableItem pickable in vectorMagPickables)
         {
             if (pickable == null)
             {
