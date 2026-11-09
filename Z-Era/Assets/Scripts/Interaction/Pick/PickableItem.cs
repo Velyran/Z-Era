@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -39,6 +40,13 @@ public class PickableItem : MonoBehaviour
     {
         get { return registeredItems; }
     }
+
+    /// <summary>
+    /// 任意可拾取道具被拾取成功时广播（参数为该道具本体）。
+    /// 供需要按物品分类/名称判断的逻辑统一监听，不必在每个道具的
+    /// On Picked Up 事件上逐件接线（例如章节控制器写入拾取初始弹药）。
+    /// </summary>
+    public static event Action<PickableItem> PickedUp;
 
     [Header("分类")]
 
@@ -283,6 +291,8 @@ public class PickableItem : MonoBehaviour
         }
 
         onPickedUp?.Invoke();
+
+        PickedUp?.Invoke(this);
     }
 
     private void ResetInteractions()

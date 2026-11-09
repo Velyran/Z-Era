@@ -41,6 +41,11 @@ public class ZombieAI : MonoBehaviour, INoiseListener
     [SerializeField, Min(0.02f)]
     private float detectionInterval = 0.25f;
 
+    [Header("Anger")]
+    [Tooltip("关闭后不再累积怒气，也就不会进入奔跑（已有怒气仍会自然衰减）")]
+    [SerializeField]
+    private bool enableAnger = true;
+
     [Header("Movement")]
     [Tooltip("僵尸每秒旋转角度")]
     [SerializeField, Min(0f)]
@@ -53,6 +58,10 @@ public class ZombieAI : MonoBehaviour, INoiseListener
     [Tooltip("允许行动的最大朝向误差角度")]
     [SerializeField, Range(0f, 180f)]
     private float maxMoveAngle = 60f;
+
+    [Tooltip("调查噪声时被持续阻挡多久后放弃该目标")]
+    [SerializeField, Min(0f)]
+    private float noiseStuckClearDuration = 1f;
 
     [Header("Attack")]
     [Tooltip("进入攻击状态的距离")]
@@ -79,6 +88,10 @@ public class ZombieAI : MonoBehaviour, INoiseListener
     [Tooltip("最后听到声音后的调查记忆时间")]
     [SerializeField, Min(0f)]
     private float noiseMemoryDuration = 6f;
+
+    [Tooltip("最后听到的声音在该时长内时，更低优先级的新声音无法覆盖记忆；超过后任何新声音都可覆盖")]
+    [SerializeField, Min(0f)]
+    private float noisePriorityLockDuration = 2.5f;
 
     [Header("Gizmos")]
     [SerializeField]
@@ -112,6 +125,15 @@ public class ZombieAI : MonoBehaviour, INoiseListener
     private float lastHeardTime = float.NegativeInfinity;
     private float lastHeardPriority;
     private bool hasNoiseTarget;
+
+    // 调查噪声时判定为被阻挡的速度上限（米/秒）。
+    private const float StuckSpeedThreshold = 0.05f;
+
+    // 上一帧 Update 时的位置，用于估算实际移动速度。
+    private Vector3 lastUpdatePosition;
+
+    // 调查噪声时被持续阻挡的累计时间。
+    private float blockedMoveTime;
 
     private bool hasWalkParameter;
     private bool hasRunParameter;
@@ -182,6 +204,9 @@ public class ZombieAI : MonoBehaviour, INoiseListener
 
     private void Update()
     {
+        Vector3 frameMoveDelta = transform.position - lastUpdatePosition;
+        lastUpdatePosition = transform.position;
+
         if (IsDyingOrDead())
         {
             currentTarget = null;
@@ -199,6 +224,8 @@ public class ZombieAI : MonoBehaviour, INoiseListener
 
         if (currentTarget == null)
         {
+            UpdateNoiseStuckTimer(frameMoveDelta);
+
             if (TryInvestigateNoise())
             {
                 return;
@@ -208,6 +235,9 @@ public class ZombieAI : MonoBehaviour, INoiseListener
             SetAttacking(false);
             return;
         }
+
+        // 正在追踪可见目标时不做阻挡判定。
+        blockedMoveTime = 0f;
 
         Vector3 targetPosition = currentTarget.position;
 
@@ -262,16 +292,20 @@ public class ZombieAI : MonoBehaviour, INoiseListener
          * 无论声音能否覆盖调查位置，都先增加怒气。
          * 这样低优先级脚步不能覆盖枪声调查位置，但仍然可以累积激怒。
          */
-        if (zombieAnger != null)
+        if (enableAnger && zombieAnger != null)
         {
             zombieAnger.AddNoiseAnger(noiseEvent);
         }
 
-        bool hasActiveNoiseMemory =
+        /*
+         * 记忆仍新鲜（未超过锁定时长）时，更低优先级的
+         * 新声音不能覆盖记忆；超过锁定时长后任何新声音都可覆盖。
+         */
+        bool memoryPriorityLocked =
             hasNoiseTarget &&
-            Time.time - lastHeardTime <= noiseMemoryDuration;
+            Time.time - lastHeardTime <= noisePriorityLockDuration;
 
-        if (hasActiveNoiseMemory &&
+        if (memoryPriorityLocked &&
             noiseEvent.priority < lastHeardPriority)
         {
             return;
@@ -324,9 +358,45 @@ public class ZombieAI : MonoBehaviour, INoiseListener
         return true;
     }
 
+    private void UpdateNoiseStuckTimer(Vector3 frameMoveDelta)
+    {
+        // 没有调查目标，或尚未真正开始移动时不累计。
+        if (!hasNoiseTarget || (!isWalking && !isRunning))
+        {
+            blockedMoveTime = 0f;
+            return;
+        }
+
+        frameMoveDelta.y = 0f;
+        float maxStuckStep = StuckSpeedThreshold * Time.deltaTime;
+
+        if (frameMoveDelta.magnitude > maxStuckStep)
+        {
+            blockedMoveTime = 0f;
+            return;
+        }
+
+        blockedMoveTime += Time.deltaTime;
+
+        if (blockedMoveTime < noiseStuckClearDuration)
+        {
+            return;
+        }
+
+        /*
+         * 目标被墙隔断无法直线到达：放弃本次调查，
+         * 等下一个可听到的声音重新触发。
+         */
+        ClearNoiseTarget();
+        SetMovementMode(MovementMode.Idle);
+        SetAttacking(false);
+        blockedMoveTime = 0f;
+    }
+
     private MovementMode GetPreferredMovementMode()
     {
-        if (zombieAnger != null &&
+        if (enableAnger &&
+            zombieAnger != null &&
             zombieAnger.IsEnraged &&
             hasRunParameter)
         {

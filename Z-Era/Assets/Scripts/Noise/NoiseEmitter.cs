@@ -74,13 +74,14 @@ public class NoiseEmitter : MonoBehaviour
 
     /// <summary>
     /// 发出枪声。
+    /// 枪声不穿墙：隔 collider 时僵尸完全忽略。
     /// </summary>
     public bool EmitGunshot(
         Vector3 position,
         float radius,
         float angerValue,
         float priority = 4f,
-        bool throughWalls = true,
+        bool throughWalls = false,
         float loudness = 1f
     )
     {

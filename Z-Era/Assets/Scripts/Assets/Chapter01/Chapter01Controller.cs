@@ -6,7 +6,9 @@ using UnityEngine;
 /// 第一章线性任务控制器：按对话标记推进场景中的解锁，
 /// 例如对讲机对话结束后允许拾取，任务推进到捡枪时放出 Glock；
 /// 并在玩家拾取场景 Glock 模型时，把玩家手持 Glock 的弹药
-/// 设为检查器里的拾取初始值（默认 20/0）。
+/// 设为检查器里的拾取初始值（默认 20/0）；拾取场景 Vector 模型
+/// 时同样写入手持 Vector（默认 25/0），拾取时手持 Vector 未启用，
+/// 等它被换枪启用后再补写。
 /// 另按对话资产为 Daniel/William/Sophia/Teresa 四个 NPC 各计一次
 /// 完成对话，累计 ch01_tk_01_talktopeople 的目标进度。
 /// 并按营地三本书各自 NPC Dialogue 的对话完成事件，各累计一次
@@ -419,6 +421,21 @@ public class Chapter01Controller : MonoBehaviour
     private List<NPCDialogue> ammoBoxOpenedDisableDialogues =
         new List<NPCDialogue>();
 
+    [Header("拾取初始弹药（拾取场景模型时写入手持 Vector）")]
+
+    [Tooltip("手持 Vector 武器物体（拖入 Player/WeaponHolder 下的 " +
+        "Vector）；拾取场景里的 Vector 模型时把弹药写到这份手持模型上")]
+    [SerializeField]
+    private GameObject vectorObject;
+
+    [Tooltip("拾取 Vector 时写入手持枪弹匣的子弹数（Vector 弹匣容量 25）")]
+    [SerializeField, Min(0)]
+    private int pickupVectorMagazineAmmo = 25;
+
+    [Tooltip("拾取 Vector 时写入手持枪的备弹数")]
+    [SerializeField, Min(0)]
+    private int pickupVectorReserveAmmo;
+
     [Header("Vector 弹匣拾取（ch01_can_pick_vector_mag）")]
 
     [Tooltip("标记 ch01_can_pick_vector_mag 置位后才启用的拾取组件" +
@@ -442,6 +459,14 @@ public class Chapter01Controller : MonoBehaviour
     // 直接写弹药会被随后的 WeaponInitialization（Awake 满弹）覆盖，
     // 记账等放出后补写
     private bool pickupAmmoPending;
+
+    // 手持 Vector 上的 WeaponController，按 vectorObject 自动解析并缓存
+    private WeaponController cachedVectorWeapon;
+
+    // 拾取 Vector 时手持 Vector 尚未启用（由换枪切到该枪时才激活）：
+    // 记账，等它被启用后再补写，避免被激活时
+    // WeaponController.Awake 的满弹初始化覆盖
+    private bool vectorAmmoPending;
 
     // 对话计数：DialogueRunner 可能晚于本组件就绪（对话画布的
     // 激活时机不定），每帧补订阅直到拿到；记录最近一次开始的
@@ -546,12 +571,14 @@ public class Chapter01Controller : MonoBehaviour
     private void OnEnable()
     {
         DialogueFlags.FlagSet += OnFlagSet;
+        PickableItem.PickedUp += OnPickableItemPickedUp;
         SubscribeInformationBooks();
     }
 
     private void OnDisable()
     {
         DialogueFlags.FlagSet -= OnFlagSet;
+        PickableItem.PickedUp -= OnPickableItemPickedUp;
         UnsubscribeInformationBooks();
         UnsubscribeRunner();
         UnsubscribeQuestEvents();
@@ -563,6 +590,23 @@ public class Chapter01Controller : MonoBehaviour
     {
         EnsureRunnerSubscription();
         EnsureQuestSubscription();
+
+        // 测试功能：按 P 把 Glock 与 Vector 的备用弹药直接补满。
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            RefillTestReserveAmmo();
+        }
+    }
+
+    // 挂起的 Vector 拾取弹药放在 LateUpdate 补写：
+    // 换枪启用由 WeaponSwitcher 的协程在 Update 之后执行，武器启用时
+    // WeaponInitialization（Awake）会先把弹药初始化成满弹；若在 Update
+    // 补写，HUD 可能先按满弹读一帧（备弹 500 一闪），下一帧才变 0。
+    // LateUpdate 在该帧所有 Update 之后、HUD 下次读取之前执行，
+    // 切枪后 HUD 直接显示 0。
+    private void LateUpdate()
+    {
+        ApplyPendingVectorAmmo();
     }
 
     private void EnsureQuestSubscription()
@@ -1092,10 +1136,13 @@ public class Chapter01Controller : MonoBehaviour
             return;
         }
 
-        // Vector 弹匣变为可拾取。
+        // Vector 弹匣变为可拾取（场景里该标记由 Vector 模型的
+        // PickableItem 在拾取时置位）：同一次拾取顺手把手持
+        // Vector 的弹药写为检查器配置的拾取初始值（默认 25/0）。
         if (flagName == VectorMagPickFlag)
         {
             ApplyVectorMagPickables(true);
+            SetVectorPickupAmmo();
             return;
         }
 
@@ -1104,6 +1151,14 @@ public class Chapter01Controller : MonoBehaviour
             flagName == searchCompleteFlag)
         {
             EnableSearchWilliam();
+            return;
+        }
+
+        // 运镜演出：标记置位时开始（只演一次）。
+        if (!string.IsNullOrWhiteSpace(cameraSequenceFlag) &&
+            flagName == cameraSequenceFlag)
+        {
+            BeginCameraSequence();
             return;
         }
 
@@ -1368,6 +1423,60 @@ public class Chapter01Controller : MonoBehaviour
         ApplyPickupAmmo(weapon);
     }
 
+    /// <summary>
+    /// 任意可拾取道具被拾取成功（PickableItem.PickedUp 广播）：
+    /// 若是 Vector 武器模型，把拾取初始弹药写入手持 Vector。
+    /// 不依赖检查器逐件接线：场景里的 Vector 模型可能是复制/另放的
+    /// 实例，不一定带拾取标记，这里按"武器分类 + 物体名/显示名为
+    /// Vector"统一识别。
+    /// </summary>
+    private void OnPickableItemPickedUp(PickableItem item)
+    {
+        if (item == null || item.category != PickupCategory.Weapon)
+        {
+            return;
+        }
+
+        if (item.gameObject.name != "Vector" &&
+            item.DisplayName != "Vector")
+        {
+            return;
+        }
+
+        SetVectorPickupAmmo();
+    }
+
+    /// <summary>
+    /// 拾取场景 Vector 模型时调用（PickableItem.PickedUp 广播，
+    /// 或该模型 PickableItem 的 On Picked Up 事件）：
+    /// 把玩家手持 Vector 的弹药设为上方的拾取初始值（默认 25/0）。
+    /// 拾取时手持 Vector 通常未启用（换枪切到该枪时才激活），
+    /// 此时先记账，等它被启用后再补写；已启用则直接写。
+    /// </summary>
+    public void SetVectorPickupAmmo()
+    {
+        WeaponController weapon = ResolveVectorWeapon();
+
+        if (weapon == null)
+        {
+            Debug.LogWarning(
+                "Chapter01Controller：找不到手持 Vector 的 WeaponController" +
+                    "（Vector Object 未赋值或其上没有该组件），拾取弹药未设置。",
+                this
+            );
+            return;
+        }
+
+        // 手持 Vector 还没启用：记账，等它被换枪启用时补写
+        if (!weapon.gameObject.activeInHierarchy)
+        {
+            vectorAmmoPending = true;
+            return;
+        }
+
+        ApplyVectorPickupAmmo(weapon);
+    }
+
     // 按 glockObject 解析手持枪的 WeaponController（含子物体），缓存
     private WeaponController ResolveGlockWeapon()
     {
@@ -1388,6 +1497,33 @@ public class Chapter01Controller : MonoBehaviour
         return cachedGlockWeapon;
     }
 
+    // 按 vectorObject 解析手持 Vector 的 WeaponController（含子物体），缓存。
+    // 场景里的 Vector Object 可能未赋值（该字段晚于场景保存），
+    // 此时退回按物体名 "Vector" 在玩家身上查找。
+    private WeaponController ResolveVectorWeapon()
+    {
+        if (cachedVectorWeapon == null && vectorObject != null)
+        {
+            cachedVectorWeapon =
+                vectorObject.GetComponent<WeaponController>();
+
+            if (cachedVectorWeapon == null)
+            {
+                cachedVectorWeapon =
+                    vectorObject.GetComponentInChildren<
+                        WeaponController
+                    >(true);
+            }
+        }
+
+        if (cachedVectorWeapon == null)
+        {
+            cachedVectorWeapon = FindWeaponByName("Vector");
+        }
+
+        return cachedVectorWeapon;
+    }
+
     // 写入拾取初始弹药。此前 WeaponInitialization 已在 Awake 里
     // 按满弹初始化完毕（每实例只跑一次），这里的赋值不会被覆盖；
     // 满匣 + 零备弹 与 HandleAmmo 的换弹守门自洽，每帧也不会被改。
@@ -1400,6 +1536,47 @@ public class Chapter01Controller : MonoBehaviour
 
         weapon.currentMagazineAmmo = pickupMagazineAmmo;
         weapon.currentCarriedAmmo = pickupReserveAmmo;
+    }
+
+    // 写入 Vector 的拾取初始弹药。与 Glock 同理：手持 Vector 启用时
+    // WeaponInitialization 已在 Awake 里跑完（每实例只跑一次），
+    // 这里的赋值不会被覆盖。
+    private void ApplyVectorPickupAmmo(WeaponController weapon)
+    {
+        if (weapon == null)
+        {
+            return;
+        }
+
+        weapon.currentMagazineAmmo = pickupVectorMagazineAmmo;
+        weapon.currentCarriedAmmo = pickupVectorReserveAmmo;
+    }
+
+    // 拾取时手持 Vector 未启用：每帧（LateUpdate）检查它是否已被启用
+    //（换枪切到 Vector 会 SetActive），一旦启用立即补写并结束检查；
+    // 手持 Vector 未赋值或已销毁时清账，不再等待。
+    private void ApplyPendingVectorAmmo()
+    {
+        if (!vectorAmmoPending)
+        {
+            return;
+        }
+
+        WeaponController weapon = ResolveVectorWeapon();
+
+        if (weapon == null)
+        {
+            vectorAmmoPending = false;
+            return;
+        }
+
+        if (!weapon.gameObject.activeInHierarchy)
+        {
+            return;
+        }
+
+        vectorAmmoPending = false;
+        ApplyVectorPickupAmmo(weapon);
     }
 
     // 显示/隐藏目标物体；未赋值时跳过。
@@ -1651,5 +1828,347 @@ public class Chapter01Controller : MonoBehaviour
         {
             collider.enabled = false;
         }
+    }
+
+    // 测试功能：按 P 直接把 Glock 与 Vector 的备用弹药补满（不动弹匣）。
+    // 手持枪可能还没启用（Glock 未放出、Vector 未换枪），
+    // 因此按物体名在场景里查找（含未激活物体），不依赖检查器赋值。
+    private void RefillTestReserveAmmo()
+    {
+        RefillReserveAmmo(FindWeaponByName("Glock"), GunType.Glock);
+        RefillReserveAmmo(FindWeaponByName("Vector"), GunType.Vector);
+    }
+
+    // 把一把武器的备用弹药写到该枪型的满额（与 WeaponInitialization
+    // 使用同一份 GunData）；武器未找到时告警跳过。
+    private void RefillReserveAmmo(
+        WeaponController weapon,
+        GunType gunType
+    )
+    {
+        if (weapon == null)
+        {
+            Debug.LogWarning(
+                $"Chapter01Controller：找不到 {gunType} 的 " +
+                    "WeaponController，备用弹药补给未生效。",
+                this
+            );
+
+            return;
+        }
+
+        weapon.currentCarriedAmmo =
+            weapon.gunDatas[(int)gunType].maxCarriedAmmo;
+    }
+
+    // 按物体名查找武器组件（含未激活物体：手持枪默认可能未启用）；
+    // 找不到返回 null。
+    private WeaponController FindWeaponByName(string weaponName)
+    {
+        foreach (
+            WeaponController weapon in
+            Object.FindObjectsOfType<WeaponController>(true)
+        )
+        {
+            if (weapon != null &&
+                weapon.gameObject.name == weaponName)
+            {
+                return weapon;
+            }
+        }
+
+        return null;
+    }
+
+    // ===== 运镜演出（Flag 触发）=====
+    // 标记置位后：禁用 HUD Canvas 与玩家操作 → 主相机缓动到目标位姿 →
+    // 停留指定时长 → 同方式回到原位 → 朝奔跑目标移动并模拟奔跑晃动 →
+    // 相机归位、恢复 HUD 与操作。只演一次。
+    // 锁定复用 DialogueRunner.TryLockGameplay（禁用玩家/武器/拾取/后座
+    // 组件），不禁用 Player 物体——主相机挂在 Player 层级下，禁用会连
+    // 相机一起停掉。收尾时必须还原相机位置：PlayerController 的视角
+    // 逻辑只写相机的本地旋转，不会复位位置。
+
+    [Header("运镜演出（Flag 触发）")]
+
+    [Tooltip("触发运镜的标记；留空则本段永不触发")]
+    [SerializeField]
+    private string cameraSequenceFlag;
+
+    [Tooltip("运镜期间禁用的 HUD Canvas（拖入 HUD 根物体）；" +
+        "留空则不隐藏")]
+    [SerializeField]
+    private GameObject hudCanvas;
+
+    [Tooltip("第一段运镜的目标位姿：相机移动到该物体的位置与旋转")]
+    [SerializeField]
+    private Transform cameraTarget;
+
+    [Tooltip("移动到目标位姿的时长（秒）")]
+    [SerializeField, Min(0f)]
+    private float cameraMoveDuration = 1.5f;
+
+    [Tooltip("在目标位姿停留的时长（秒）")]
+    [SerializeField, Min(0f)]
+    private float cameraHoldDuration = 2f;
+
+    [Tooltip("回到原位姿的时长（秒）")]
+    [SerializeField, Min(0f)]
+    private float cameraReturnDuration = 1.5f;
+
+    [Tooltip("缓入缓出曲线：横轴 0~1 为线性进度，纵轴为实际应用进度")]
+    [SerializeField]
+    private AnimationCurve cameraEasing =
+        AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Tooltip("最后一段奔跑的目标位置（取该物体的世界坐标，朝向不变）；" +
+        "留空则跳过奔跑段")]
+    [SerializeField]
+    private Transform runTarget;
+
+    [Tooltip("奔跑段时长（秒）")]
+    [SerializeField, Min(0.01f)]
+    private float runDuration = 3f;
+
+    [Tooltip("奔跑晃动幅度（米）")]
+    [SerializeField, Min(0f)]
+    private float runShakeAmplitude = 0.05f;
+
+    [Tooltip("奔跑晃动转角（度）")]
+    [SerializeField, Min(0f)]
+    private float runShakeAngle = 0.8f;
+
+    [Tooltip("奔跑晃动频率（Hz，约等于每秒步频的一半）")]
+    [SerializeField, Min(0f)]
+    private float runShakeFrequency = 2.5f;
+
+    // 演出是否已触发（只演一次）
+    private bool cameraSequenceFired;
+
+    // 标记置位时启动运镜演出；配置缺项时告警跳过。
+    private void BeginCameraSequence()
+    {
+        if (cameraSequenceFired)
+        {
+            return;
+        }
+
+        Camera mainCamera = Camera.main;
+
+        if (mainCamera == null)
+        {
+            Debug.LogWarning(
+                "Chapter01Controller：找不到主相机（Camera.main），" +
+                    "运镜演出未执行。",
+                this
+            );
+
+            return;
+        }
+
+        if (cameraTarget == null)
+        {
+            Debug.LogWarning(
+                "Chapter01Controller：运镜 Target 未赋值，" +
+                    "运镜演出未执行。",
+                this
+            );
+
+            return;
+        }
+
+        cameraSequenceFired = true;
+        StartCoroutine(PlayCameraSequence(mainCamera));
+    }
+
+    private IEnumerator PlayCameraSequence(Camera mainCamera)
+    {
+        Transform cameraTransform = mainCamera.transform;
+
+        Vector3 startPosition = cameraTransform.position;
+        Quaternion startRotation = cameraTransform.rotation;
+
+        // 复用对话的"锁操作 + 隐藏 HUD"逻辑。标记可能来自对话收尾，
+        // 此刻对话仍在恢复，轮询到空闲再锁，避免它的恢复把锁定覆盖掉。
+        float lockDeadline = Time.realtimeSinceStartup + LockWaitTimeout;
+        bool locked = false;
+
+        while (!locked &&
+               Time.realtimeSinceStartup < lockDeadline)
+        {
+            locked = DialogueRunner.TryLockGameplay();
+
+            if (!locked)
+            {
+                yield return null;
+            }
+        }
+
+        if (!locked)
+        {
+            Debug.LogWarning(
+                "Chapter01Controller：运镜演出期间未能锁定玩家操作。",
+                this
+            );
+        }
+
+        // 隐藏检查器指定的 HUD Canvas（记录原状态，演出结束恢复）。
+        bool hudWasActive = false;
+
+        if (hudCanvas != null)
+        {
+            hudWasActive = hudCanvas.activeSelf;
+            hudCanvas.SetActive(false);
+        }
+
+        // 运镜期间锁定鼠标，禁止玩家转动视角。
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        // 1) 缓动到目标位姿
+        yield return TweenCameraPose(
+            cameraTransform,
+            startPosition,
+            startRotation,
+            cameraTarget.position,
+            cameraTarget.rotation,
+            cameraMoveDuration
+        );
+
+        // 2) 在目标位姿停留
+        if (cameraHoldDuration > 0f)
+        {
+            yield return new WaitForSeconds(cameraHoldDuration);
+        }
+
+        // 3) 同方式回到原位姿
+        yield return TweenCameraPose(
+            cameraTransform,
+            cameraTarget.position,
+            cameraTarget.rotation,
+            startPosition,
+            startRotation,
+            cameraReturnDuration
+        );
+
+        // 4) 回到原位后朝奔跑目标移动，途中模拟奔跑晃动
+        if (runTarget != null)
+        {
+            yield return RunCameraToTarget(
+                cameraTransform,
+                startPosition,
+                startRotation,
+                runTarget.position,
+                runDuration
+            );
+        }
+
+        // 收尾：先把相机放回原位（位置必须还原），
+        // 再恢复 HUD 与玩家操作。
+        cameraTransform.SetPositionAndRotation(startPosition, startRotation);
+
+        if (hudCanvas != null)
+        {
+            hudCanvas.SetActive(hudWasActive);
+        }
+
+        if (locked)
+        {
+            DialogueRunner.UnlockGameplay();
+        }
+
+        // UnlockGameplay 会把鼠标恢复为锁定前的状态，
+        // 这里再锁一次，保证演出结束后鼠标仍处于锁定状态。
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    // 把相机从 from 缓动到 to，进度经缓动曲线映射。
+    private IEnumerator TweenCameraPose(
+        Transform cameraTransform,
+        Vector3 fromPosition,
+        Quaternion fromRotation,
+        Vector3 toPosition,
+        Quaternion toRotation,
+        float duration
+    )
+    {
+        if (duration <= 0f)
+        {
+            cameraTransform.SetPositionAndRotation(
+                toPosition,
+                toRotation
+            );
+
+            yield break;
+        }
+
+        for (float elapsed = 0f;
+             elapsed < duration;
+             elapsed += Time.deltaTime)
+        {
+            float progress = cameraEasing != null &&
+                             cameraEasing.length > 0
+                ? cameraEasing.Evaluate(elapsed / duration)
+                : elapsed / duration;
+
+            cameraTransform.SetPositionAndRotation(
+                Vector3.LerpUnclamped(
+                    fromPosition,
+                    toPosition,
+                    progress
+                ),
+                Quaternion.SlerpUnclamped(
+                    fromRotation,
+                    toRotation,
+                    progress
+                )
+            );
+
+            yield return null;
+        }
+
+        cameraTransform.SetPositionAndRotation(toPosition, toRotation);
+    }
+
+    // 奔跑段：按时长从原位姿平移到目标位置，叠加竖向起伏、左右摆动
+    // 与轻微俯仰/侧倾，模拟奔跑时的镜头晃动；结束时落到目标位置。
+    private IEnumerator RunCameraToTarget(
+        Transform cameraTransform,
+        Vector3 fromPosition,
+        Quaternion fromRotation,
+        Vector3 toPosition,
+        float duration
+    )
+    {
+        Vector3 right = fromRotation * Vector3.right;
+
+        for (float elapsed = 0f;
+             elapsed < duration;
+             elapsed += Time.deltaTime)
+        {
+            float t = Mathf.Clamp01(elapsed / duration);
+            float phase = elapsed * runShakeFrequency * Mathf.PI * 2f;
+
+            Vector3 shakeOffset =
+                right * (Mathf.Sin(phase) * runShakeAmplitude * 0.6f) +
+                Vector3.up * (Mathf.Sin(phase * 2f) * runShakeAmplitude);
+
+            Quaternion shakeRotation = Quaternion.Euler(
+                Mathf.Sin(phase * 2f + 0.6f) * runShakeAngle,
+                0f,
+                Mathf.Sin(phase) * runShakeAngle
+            );
+
+            cameraTransform.SetPositionAndRotation(
+                Vector3.LerpUnclamped(fromPosition, toPosition, t) +
+                    shakeOffset,
+                fromRotation * shakeRotation
+            );
+
+            yield return null;
+        }
+
+        cameraTransform.SetPositionAndRotation(toPosition, fromRotation);
     }
 }

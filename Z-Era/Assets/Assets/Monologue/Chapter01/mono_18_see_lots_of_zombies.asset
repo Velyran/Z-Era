@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7735a702022844a4ab02a9f6c34da2b9, type: 3}
+  m_Name: mono_18_see_lots_of_zombies
+  m_EditorClassIdentifier: 
+  segments:
+  - "\u96F6\u53F7\u96A7\u9053\u524D\u805A\u96C6\u4E86\u5927\u91CF\u611F\u67D3\u8005\uFF0C\u6216\u8BB8\u662F\u961F\u4F0D\u524D\u5F80\u96A7\u9053\u65F6\u628A\u5B83\u4EEC\u5F15\u5230\u4E86\u8FD9\u91CC\uFF0C\u770B\u6765\u53EA\u80FD\u786C\u95EF\u4E86\u3002"
+  charactersPerSecond: 20
+  holdDuration: 2
+  fadeDuration: 1
+  segmentInterval: 0.5
+  requiredFlags:
+  - ch01_lots_of_zombies
+  forbiddenFlags: []
+  flagsToSetOnShown: []

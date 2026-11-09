@@ -10,7 +10,8 @@ using UnityEngine;
 /// 激活是幂等的：玩家身上有多个碰撞体（CharacterController、
 /// 武器触发器等），OnTriggerEnter 会进入多次，重复触发无副作用。
 /// 全部组激活完后禁用自身，整个区域只触发一次。
-/// 可选地在触发时置位一个 DialogueFlags 标记，供剧情/任务判定。
+/// 可选地在触发时置位一个 DialogueFlags 标记，供剧情/任务判定；
+/// 也可配置一个 DialogueFlags 标记，在该标记被置位时触发。
 /// </summary>
 public class ZombieZoneActivator : MonoBehaviour
 {
@@ -29,6 +30,10 @@ public class ZombieZoneActivator : MonoBehaviour
     [SerializeField]
     private string triggerTag = "Player";
 
+    [Tooltip("设置该 DialogueFlags 标记时也会触发激活，留空则不启用")]
+    [SerializeField]
+    private string triggerFlag;
+
     [Header("剧情联动")]
 
     [Tooltip("触发激活时置位的标记（供任务/对话条件判定），" +
@@ -40,6 +45,31 @@ public class ZombieZoneActivator : MonoBehaviour
     //（玩家身上多个碰撞体）重复执行。
     private readonly HashSet<GameObject> activatedGroups =
         new HashSet<GameObject>();
+
+    private void OnEnable()
+    {
+        DialogueFlags.FlagSet += OnFlagSet;
+
+        // 组件启用时标记可能已经被设置，立即补发一次触发。
+        if (!string.IsNullOrWhiteSpace(triggerFlag) &&
+            DialogueFlags.HasFlag(triggerFlag))
+        {
+            ActivateZone();
+        }
+    }
+
+    private void OnDisable()
+    {
+        DialogueFlags.FlagSet -= OnFlagSet;
+    }
+
+    private void OnFlagSet(string flagName)
+    {
+        if (flagName == triggerFlag)
+        {
+            ActivateZone();
+        }
+    }
 
     private void Awake()
     {
@@ -63,6 +93,11 @@ public class ZombieZoneActivator : MonoBehaviour
             return;
         }
 
+        ActivateZone();
+    }
+
+    private void ActivateZone()
+    {
         if (groupsToActivate == null)
         {
             return;
