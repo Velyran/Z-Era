@@ -47,6 +47,10 @@ public class ZombieAI : MonoBehaviour, INoiseListener
     private bool enableAnger = true;
 
     [Header("Movement")]
+    [Tooltip("重力加速度（负数向下，与玩家一致为 -9.81）")]
+    [SerializeField]
+    private float gravity = -9.81f;
+
     [Tooltip("僵尸每秒旋转角度")]
     [SerializeField, Min(0f)]
     private float rotationSpeed = 540f;
@@ -135,6 +139,9 @@ public class ZombieAI : MonoBehaviour, INoiseListener
     // 调查噪声时被持续阻挡的累计时间。
     private float blockedMoveTime;
 
+    // 垂直速度：CharacterController 不自带重力，由本组件每帧积分。
+    private float verticalVelocity;
+
     private bool hasWalkParameter;
     private bool hasRunParameter;
     private bool hasAttackParameter;
@@ -204,6 +211,10 @@ public class ZombieAI : MonoBehaviour, INoiseListener
 
     private void Update()
     {
+        // CharacterController 本身不产生重力：每帧先做一次垂直积分，
+        // 与行走/攻击状态无关（Idle 时同样要落地）。
+        ApplyGravity();
+
         Vector3 frameMoveDelta = transform.position - lastUpdatePosition;
         lastUpdatePosition = transform.position;
 
@@ -512,6 +523,35 @@ public class ZombieAI : MonoBehaviour, INoiseListener
         {
             transform.position += deltaPosition;
         }
+    }
+
+    // 垂直重力：CharacterController 自身不产生重力，这里每帧按重力
+    // 加速度积分并向下贴地，保证僵尸落地、走下台阶/斜坡时跟随地面。
+    // 与 OnAnimatorMove 的水平 root motion 分两次 Move，
+    // CharacterController 允许同一帧多次 Move。
+    private void ApplyGravity()
+    {
+        if (characterController == null ||
+            !characterController.enabled)
+        {
+            verticalVelocity = 0f;
+            return;
+        }
+
+        if (characterController.isGrounded &&
+            verticalVelocity < 0f)
+        {
+            // 贴地时保留轻微下沉，保证 isGrounded 判定稳定。
+            verticalVelocity = -2f;
+        }
+        else
+        {
+            verticalVelocity += gravity * Time.deltaTime;
+        }
+
+        characterController.Move(
+            Vector3.up * verticalVelocity * Time.deltaTime
+        );
     }
 
     private Transform FindVisiblePlayer()

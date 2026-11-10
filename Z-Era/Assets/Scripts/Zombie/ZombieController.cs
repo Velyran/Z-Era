@@ -66,6 +66,12 @@ public class ZombieController : MonoBehaviour,
             {
                 characterController.enabled = false;
             }
+
+            // 死亡瞬间就移除伤害判定盒（子物体上的 Trigger 胶囊），
+            // 不等 Die 动画播完：尸体不再参与瞄准与命中判断，
+            // 否则贴脸时准星射线会先命中尸体的判定盒（0.x 米处），
+            // 子弹会朝这个极近的点飞，弹道明显偏离准星。
+            DestroyHitboxTriggers();
         }
 
         ZombieAnimation();
@@ -137,6 +143,41 @@ public class ZombieController : MonoBehaviour,
         }
     }
 
+    // 销毁子物体上的伤害判定盒（Trigger 胶囊），保留根物体与
+    // ZombieHearing 层（听觉感知）的碰撞体。可重复调用：已销毁的
+    // 不会再被收集到。
+    private void DestroyHitboxTriggers()
+    {
+        int hearingLayer =
+            LayerMask.NameToLayer(
+                "ZombieHearing"
+            );
+
+        Collider[] triggers =
+            GetComponentsInChildren<Collider>(
+                includeInactive: true
+            )
+            .Where(c =>
+                c != null &&
+                c.isTrigger &&
+                c.transform != transform &&
+                (
+                    hearingLayer < 0 ||
+                    c.gameObject.layer !=
+                        hearingLayer
+                )
+            )
+            .ToArray();
+
+        foreach (Collider trigger in triggers)
+        {
+            if (trigger != null)
+            {
+                Destroy(trigger);
+            }
+        }
+    }
+
     private void ClearComponents()
     {
         AnimatorStateInfo info =
@@ -157,34 +198,8 @@ public class ZombieController : MonoBehaviour,
         {
             deathCleanupStarted = true;
 
-            int hearingLayer =
-                LayerMask.NameToLayer(
-                    "ZombieHearing"
-                );
-
-            Collider[] triggers =
-                GetComponentsInChildren<Collider>(
-                    includeInactive: true
-                )
-                .Where(c =>
-                    c != null &&
-                    c.isTrigger &&
-                    c.transform != transform &&
-                    (
-                        hearingLayer < 0 ||
-                        c.gameObject.layer !=
-                            hearingLayer
-                    )
-                )
-                .ToArray();
-
-            foreach (Collider trigger in triggers)
-            {
-                if (trigger != null)
-                {
-                    Destroy(trigger);
-                }
-            }
+            // 通常死亡瞬间已经清过了，这里兜底再清一次（幂等）。
+            DestroyHitboxTriggers();
         }
 
         if (zombieEffects != null)

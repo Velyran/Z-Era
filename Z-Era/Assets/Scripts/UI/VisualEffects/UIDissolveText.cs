@@ -179,55 +179,15 @@ namespace Migration.UI
                         (byte)(255f * alpha)
                     );
                 }
-
-                meshInfo.mesh.colors32 = colors;
             }
 
-            // CanvasRenderer 在 SetMesh 时拷贝顶点数据，直接改 Mesh 不生效，
-            // 必须把修改后的网格重新提交给渲染器才会显示。
-            // meshInfo[0] 是主字体网格；回退字体/多图集页的字符
-            // 位于 meshInfo[1..] 的子网格中，由 TMP SubMesh 子对象渲染。
-            if (textInfo.meshInfo[0].mesh != null)
-            {
-                text.canvasRenderer.SetMesh(
-                    textInfo.meshInfo[0].mesh
-                );
-            }
-
-            if (textInfo.meshInfo.Length > 1)
-            {
-                TMP_SubMeshUI[] subMeshUIs =
-                    text.GetComponentsInChildren<
-                        TMP_SubMeshUI
-                    >(false);
-
-                foreach (
-                    TMP_SubMeshUI subMeshUI in subMeshUIs
-                )
-                {
-                    if (subMeshUI == null ||
-                        subMeshUI.canvasRenderer == null)
-                    {
-                        continue;
-                    }
-
-                    for (
-                        int i = 1;
-                        i < textInfo.meshInfo.Length;
-                        i++
-                    )
-                    {
-                        if (textInfo.meshInfo[i].mesh != null &&
-                            textInfo.meshInfo[i].material ==
-                                subMeshUI.sharedMaterial)
-                        {
-                            subMeshUI.canvasRenderer.SetMesh(
-                                textInfo.meshInfo[i].mesh
-                            );
-                        }
-                    }
-                }
-            }
+            // 交给 TMP 官方接口提交：它会按索引把主网格与所有子网格
+            // （多图集页 / 回退字体）一起上传。之前自己按"材质相等"
+            // 匹配子网格再 SetMesh，会在多页图集时把同一个网格绑到多个
+            // 子网格渲染器上（字形重叠）或漏绑（字形消失）。
+            text.UpdateVertexData(
+                TMP_VertexDataUpdateFlags.Colors32
+            );
         }
 
         // 二维值噪声：晶格随机值 + 平滑双线性插值，输出范围约 (0, 1)。

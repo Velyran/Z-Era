@@ -397,6 +397,11 @@ PrefabInstance:
       propertyPath: bulletPool
       value: 
       objectReference: {fileID: 116903735}
+    - target: {fileID: 5341029299037344768, guid: f0860eda552b2ed47a7359cb6ccf9860,
+        type: 3}
+      propertyPath: walkSpeed
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 5788021480213949316, guid: f0860eda552b2ed47a7359cb6ccf9860,
         type: 3}
       propertyPath: m_CullingMask.m_Bits
@@ -11560,9 +11565,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   category: 2
   interactionDistanceOverride: 2
+  displayName: 
+  inventoryInitialRotation: {x: 0, y: -90, z: -90}
   unlimitedInteractions: 1
   maxInteractions: 1
   weaponName: 
+  magazineAmmo: 0
   flagsToSetOnPickup: []
   questId: 
   objectiveId: 

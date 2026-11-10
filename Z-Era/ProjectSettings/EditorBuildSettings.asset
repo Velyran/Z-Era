@@ -14,4 +14,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/2_Prologue.unity
     guid: 754dcc568a77cec4fa138ca04f140493
+  - enabled: 1
+    path: Assets/Scenes/3_Chapter01.unity
+    guid: 7ecc3b90b8ade664fbd147f073e28d0b
   m_configObjects: {}

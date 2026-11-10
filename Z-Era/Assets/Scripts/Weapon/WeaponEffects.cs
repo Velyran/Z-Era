@@ -33,6 +33,12 @@ public class WeaponEffects : MonoBehaviour
     [Tooltip("子弹速度")]
     public float bulletSpeed = 500f;
 
+    [Tooltip("瞄准收敛的最小距离（米）：命中点比它更近时（贴脸的墙、" +
+        "尸体等），方向改用准星射线上这个距离处的点，避免枪口→命中点" +
+        "的夹角在近距被放大甚至反向")]
+    [SerializeField, Min(0f)]
+    private float minimumAimDistance = 3f;
+
     #endregion
 
     #region 当前武器
@@ -318,7 +324,13 @@ public class WeaponEffects : MonoBehaviour
             aimMask
         ))
         {
-            targetPoint = hit.point;
+            // 命中点比最小收敛距离更近时（贴脸的墙、尸体等），
+            // 枪口到它的方向会和准星轴拉出很大的夹角，甚至反向；
+            // 这里改用准星射线上最小收敛距离处的点：弹道仍从枪口
+            // 出发、朝准星方向，只是不再向贴脸的点收敛。
+            targetPoint = hit.distance >= minimumAimDistance
+                ? hit.point
+                : ray.GetPoint(minimumAimDistance);
         }
         else
         {

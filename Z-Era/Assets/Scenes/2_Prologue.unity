@@ -5159,6 +5159,7 @@ MonoBehaviour:
     - pr_tk_01_pickweapon_unfinished
     dialogue: {fileID: 11400000, guid: 2a13b5e44441aaa44850c5a6703c2eb7, type: 2}
   talkedFlag: 
+  interactFlag: 
   playOnce: 0
   interactKey: 101
   interactDistance: 1.5
@@ -9712,6 +9713,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 987044746033326090, guid: 5b13204f7d2fc51438d48e4a92fbe080,
+        type: 3}
+      propertyPath: m_text
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1757575073726804736, guid: 5b13204f7d2fc51438d48e4a92fbe080,
         type: 3}
@@ -21804,6 +21810,11 @@ PrefabInstance:
       propertyPath: bulletPool
       value: 
       objectReference: {fileID: 1581238964}
+    - target: {fileID: 5341029299037344768, guid: f0860eda552b2ed47a7359cb6ccf9860,
+        type: 3}
+      propertyPath: walkSpeed
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 5788021480213949316, guid: f0860eda552b2ed47a7359cb6ccf9860,
         type: 3}
       propertyPath: m_CullingMask.m_Bits

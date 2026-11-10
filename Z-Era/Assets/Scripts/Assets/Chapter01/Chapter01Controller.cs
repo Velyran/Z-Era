@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -103,6 +104,15 @@ public class Chapter01Controller : MonoBehaviour
     // 黑屏演出等锁的最长等待时间（秒）：
     // 对话收尾要等溶解播完，超过这个时间就放弃上锁继续演出。
     private const float LockWaitTimeout = 3f;
+
+    // 运镜期间 HUD 下唯一保留的子物体名（独白文本）。
+    private const string MonologueTextName = "MonologueText";
+
+    // 僵尸 Animator 的行走参数名（运镜期间强制为 true）。
+    private const string ZombieWalkParameterName = "walk";
+
+    // 奔跑转向 Target2 的起点：距离 Run Target 还剩 5% 时开始转。
+    private const float TurnStartRemainingDistance = 0.05f;
 
     [Tooltip("对讲机对话结束后才启用的可拾取组件" +
         "（拖入 Glock 上的 PickableItem）")]
@@ -590,6 +600,12 @@ public class Chapter01Controller : MonoBehaviour
     {
         EnsureRunnerSubscription();
         EnsureQuestSubscription();
+
+        // 僵尸群已随运镜启用：每帧覆盖 walk 参数，保证始终行走。
+        if (zombieGroupActivated)
+        {
+            ForceZombieWalk();
+        }
 
         // 测试功能：按 P 把 Glock 与 Vector 的备用弹药直接补满。
         if (Input.GetKeyDown(KeyCode.P))
@@ -1881,9 +1897,11 @@ public class Chapter01Controller : MonoBehaviour
     }
 
     // ===== 运镜演出（Flag 触发）=====
-    // 标记置位后：禁用 HUD Canvas 与玩家操作 → 主相机缓动到目标位姿 →
-    // 停留指定时长 → 同方式回到原位 → 朝奔跑目标移动并模拟奔跑晃动 →
-    // 相机归位、恢复 HUD 与操作。只演一次。
+    // 标记置位后：禁用 HUD Canvas 下除 MonologueText 外的所有子物体与
+    // 玩家操作 → 主相机缓动到目标位姿 → 停留指定时长 → 同方式回到原位
+    // → 朝奔跑目标移动并模拟奔跑晃动（最后 5% 距离缓入缓出转向 Target2）
+    // → 相机归位、恢复 HUD 与操作。
+    // 只演一次。
     // 锁定复用 DialogueRunner.TryLockGameplay（禁用玩家/武器/拾取/后座
     // 组件），不禁用 Player 物体——主相机挂在 Player 层级下，禁用会连
     // 相机一起停掉。收尾时必须还原相机位置：PlayerController 的视角
@@ -1895,10 +1913,15 @@ public class Chapter01Controller : MonoBehaviour
     [SerializeField]
     private string cameraSequenceFlag;
 
-    [Tooltip("运镜期间禁用的 HUD Canvas（拖入 HUD 根物体）；" +
-        "留空则不隐藏")]
+    [Tooltip("运镜期间禁用其下除 MonologueText 外的所有子物体" +
+        "（拖入 HUD 根物体）；留空则不隐藏")]
     [SerializeField]
     private GameObject hudCanvas;
+
+    [Tooltip("运镜开始后始终禁用的手持武器容器" +
+        "（拖入 Player 下的 WeaponHolder）；留空则不禁用")]
+    [SerializeField]
+    private GameObject weaponHolder;
 
     [Tooltip("第一段运镜的目标位姿：相机移动到该物体的位置与旋转")]
     [SerializeField]
@@ -1930,6 +1953,12 @@ public class Chapter01Controller : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float runDuration = 3f;
 
+    [Tooltip("奔跑最后 5% 的距离里把相机视角转向该物体（Target2），" +
+        "缓入缓出（起步与收尾慢、中间快），落到 Run Target 时正好转完；" +
+        "留空则到 Run Target 后直接按剩余距离阈值淡入黑屏")]
+    [SerializeField]
+    private Transform cameraTurnTarget;
+
     [Tooltip("奔跑晃动幅度（米）")]
     [SerializeField, Min(0f)]
     private float runShakeAmplitude = 0.05f;
@@ -1942,8 +1971,62 @@ public class Chapter01Controller : MonoBehaviour
     [SerializeField, Min(0f)]
     private float runShakeFrequency = 2.5f;
 
+    [Tooltip("开始奔跑运镜时置位的标记；留空则不置位")]
+    [SerializeField]
+    private string runStartFlag;
+
+    [Tooltip("运镜触发时要启用的僵尸群空物体" +
+        "（拖入 ZombieGroupFinalCutscene），其下所有僵尸的 " +
+        "walk 参数会被强制为 true；留空则不启用")]
+    [SerializeField]
+    private GameObject zombieGroupFinalCutscene;
+
+    [Header("结尾黑屏与文本（运镜演出末尾）")]
+
+    [Tooltip("奔跑段剩余距离比例达到该值时开始淡入黑屏；" +
+        "0.5 = 距离指定位置还剩 50% 距离")]
+    [SerializeField, Range(0f, 1f)]
+    private float endingFadeStartRemainingDistance = 0.5f;
+
+    [Tooltip("黑屏淡入时长（秒）")]
+    [SerializeField, Min(0f)]
+    private float endingFadeInDuration = 1f;
+
+    [Tooltip("完全黑屏后置位的成就标记（DialogueFlags）；" +
+        "留空则不置位")]
+    [SerializeField]
+    private string endingAchievementFlag;
+
+    [Tooltip("完全黑屏后画面中间渐入显示的文本（TMP_Text）；" +
+        "需位于黑屏之上、且不被 HUD Canvas 一并关闭的 Canvas 下；" +
+        "留空则跳过文本")]
+    [SerializeField]
+    private TMP_Text endingText;
+
+    [Tooltip("结尾文本淡入时长（秒）")]
+    [SerializeField, Min(0f)]
+    private float endingTextFadeInDuration = 1f;
+
+    [Tooltip("结尾文本完全显示后的停留时长（秒）")]
+    [SerializeField, Min(0f)]
+    private float endingTextHoldDuration = 2f;
+
+    [Tooltip("结尾文本淡出时长（秒）")]
+    [SerializeField, Min(0f)]
+    private float endingTextFadeOutDuration = 1f;
+
+    // 结尾文本的 CanvasGroup（按 endingText 自动解析/自动添加）
+    private CanvasGroup endingTextGroup;
+
     // 演出是否已触发（只演一次）
     private bool cameraSequenceFired;
+
+    // 僵尸群是否已随运镜启用：启用后每帧强制 walk 参数为 true
+    private bool zombieGroupActivated;
+
+    // 僵尸群下所有 Animator（启用时收集一次）
+    private readonly List<Animator> zombieAnimators =
+        new List<Animator>();
 
     // 标记置位时启动运镜演出；配置缺项时告警跳过。
     private void BeginCameraSequence()
@@ -1978,7 +2061,78 @@ public class Chapter01Controller : MonoBehaviour
         }
 
         cameraSequenceFired = true;
+
+        // 运镜开始后始终禁用 Weapon Holder：手持武器不再出现在画面里。
+        DisableWeaponHolder();
+
+        // 运镜触发的同时放出僵尸群，让它保持行走。
+        EnableZombieGroupFinalCutscene();
+
         StartCoroutine(PlayCameraSequence(mainCamera));
+    }
+
+    // 运镜期间及之后始终禁用手持武器容器（不随收尾恢复）；
+    // 未赋值时告警跳过。
+    private void DisableWeaponHolder()
+    {
+        if (weaponHolder == null)
+        {
+            Debug.LogWarning(
+                "Chapter01Controller：Weapon Holder 未赋值，" +
+                    "运镜时未禁用手持武器。",
+                this
+            );
+
+            return;
+        }
+
+        weaponHolder.SetActive(false);
+    }
+
+    // 运镜触发：启用僵尸群空物体并收集其下所有 Animator；
+    // 之后由 Update 每帧把 walk 参数强制为 true，僵尸保持行走。
+    private void EnableZombieGroupFinalCutscene()
+    {
+        if (zombieGroupFinalCutscene == null)
+        {
+            Debug.LogWarning(
+                "Chapter01Controller：僵尸群（Zombie Group Final " +
+                    "Cutscene）未赋值，运镜时未启用。",
+                this
+            );
+
+            return;
+        }
+
+        zombieGroupFinalCutscene.SetActive(true);
+
+        zombieAnimators.Clear();
+        zombieAnimators.AddRange(
+            zombieGroupFinalCutscene.GetComponentsInChildren<
+                Animator
+            >(true)
+        );
+
+        zombieGroupActivated = true;
+        ForceZombieWalk();
+    }
+
+    // 把僵尸群下所有 Animator 的 walk 参数置为 true。
+    // ZombieAI 会按自身移动状态改写该参数（静止时置 false），
+    // 所以演出期间每帧覆盖一次，保证启用后始终在行走。
+    private void ForceZombieWalk()
+    {
+        int walkHash = Animator.StringToHash(ZombieWalkParameterName);
+
+        foreach (Animator animator in zombieAnimators)
+        {
+            if (animator == null)
+            {
+                continue;
+            }
+
+            animator.SetBool(walkHash, true);
+        }
     }
 
     private IEnumerator PlayCameraSequence(Camera mainCamera)
@@ -2012,18 +2166,25 @@ public class Chapter01Controller : MonoBehaviour
             );
         }
 
-        // 隐藏检查器指定的 HUD Canvas（记录原状态，演出结束恢复）。
-        bool hudWasActive = false;
+        // 隐藏 HUD Canvas 下除 MonologueText 外的所有子物体
+        //（记录原状态，演出结束恢复）。上面的锁定会把 HUD 根一并禁用，
+        // 这里先把根重新启用、再只关子物体，MonologueText 才能保持可见；
+        // 解除锁定时由 DialogueRunner 按锁定前的状态还原根。
+        List<GameObject> hiddenHudChildren = null;
 
         if (hudCanvas != null)
         {
-            hudWasActive = hudCanvas.activeSelf;
-            hudCanvas.SetActive(false);
+            hudCanvas.SetActive(true);
+            hiddenHudChildren = HideHudChildrenExceptMonologue();
         }
 
         // 运镜期间锁定鼠标，禁止玩家转动视角。
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        // 结尾黑屏/文本提前归零，避免运镜过程中露出残留内容；
+        // 同时确保黑屏 Canvas 排在被拖拽文本的 Canvas 之下。
+        PrepareEndingOverlay();
 
         // 1) 缓动到目标位姿
         yield return TweenCameraPose(
@@ -2051,25 +2212,92 @@ public class Chapter01Controller : MonoBehaviour
             cameraReturnDuration
         );
 
-        // 4) 回到原位后朝奔跑目标移动，途中模拟奔跑晃动
+        // 4) 回到原位后朝奔跑目标移动，途中模拟奔跑晃动；
+        //    有转向目标时，最后 5% 的距离里按缓入缓出曲线转向
+        //    Target2（起步与收尾慢、中间快），落地即转完，随后淡入黑屏；
+        //    没有转向目标时按剩余距离阈值淡入。
+        Coroutine endingFadeCoroutine = null;
+        bool endingStarted = false;
+
         if (runTarget != null)
         {
-            yield return RunCameraToTarget(
-                cameraTransform,
-                startPosition,
-                startRotation,
-                runTarget.position,
-                runDuration
-            );
+            // 开始奔跑运镜：置位检查器配置的标记。
+            if (!string.IsNullOrWhiteSpace(runStartFlag))
+            {
+                DialogueFlags.SetFlag(runStartFlag, true);
+            }
+
+            System.Action startEnding = () =>
+            {
+                if (endingStarted)
+                {
+                    return;
+                }
+
+                endingStarted = true;
+                endingFadeCoroutine = StartCoroutine(FadeEndingToBlack());
+            };
+
+            if (cameraTurnTarget == null)
+            {
+                // 没有转向目标：剩余距离到阈值时开始淡入黑屏（原有行为）。
+                yield return RunCameraToTarget(
+                    cameraTransform,
+                    startPosition,
+                    startRotation,
+                    runTarget.position,
+                    runDuration,
+                    endingFadeStartRemainingDistance,
+                    startEnding
+                );
+            }
+            else
+            {
+                // 最后 5% 的距离里边跑边缓入缓出转向 Target2，
+                // 落到 Run Target 时正好转完，然后淡入黑屏。
+                yield return RunCameraToTarget(
+                    cameraTransform,
+                    startPosition,
+                    startRotation,
+                    runTarget.position,
+                    runDuration,
+                    0f,
+                    null,
+                    cameraTurnTarget,
+                    TurnStartRemainingDistance
+                );
+
+                startEnding();
+            }
+        }
+
+        // 结尾演出：奔跑触发后，等黑屏完全盖住画面，
+        // 再置位成就标记、显示文本并切主菜单；此后不再恢复
+        // 相机、HUD 与操作，交给场景过渡接管。
+        if (endingStarted)
+        {
+            if (endingFadeCoroutine != null)
+            {
+                yield return endingFadeCoroutine;
+            }
+
+            yield return PlayEndingSequence();
+            yield break;
         }
 
         // 收尾：先把相机放回原位（位置必须还原），
         // 再恢复 HUD 与玩家操作。
         cameraTransform.SetPositionAndRotation(startPosition, startRotation);
 
-        if (hudCanvas != null)
+        if (hiddenHudChildren != null)
         {
-            hudCanvas.SetActive(hudWasActive);
+            foreach (GameObject child in hiddenHudChildren)
+            {
+                if (child != null)
+                {
+                    child.SetActive(true);
+                }
+            }
         }
 
         if (locked)
@@ -2081,6 +2309,198 @@ public class Chapter01Controller : MonoBehaviour
         // 这里再锁一次，保证演出结束后鼠标仍处于锁定状态。
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    // 运镜期间禁用 HUD 下除 MonologueText 外的直接子物体；
+    // 返回本次被禁用的物体，供演出结束按原状恢复。
+    private List<GameObject> HideHudChildrenExceptMonologue()
+    {
+        List<GameObject> hidden = new List<GameObject>();
+
+        foreach (Transform child in hudCanvas.transform)
+        {
+            if (child == null || child.name == MonologueTextName)
+            {
+                continue;
+            }
+
+            if (!child.gameObject.activeSelf)
+            {
+                continue;
+            }
+
+            child.gameObject.SetActive(false);
+            hidden.Add(child.gameObject);
+        }
+
+        return hidden;
+    }
+
+    // 结尾演出准备：黑屏与文本归零，黑屏 Canvas 排在文本 Canvas 之下。
+    private void PrepareEndingOverlay()
+    {
+        if (blackScreen == null)
+        {
+            blackScreen = CreateRuntimeBlackScreen();
+        }
+
+        blackScreen.alpha = 0f;
+        blackScreen.blocksRaycasts = false;
+
+        PrepareEndingText();
+
+        if (blackScreen == null || endingText == null)
+        {
+            return;
+        }
+
+        Canvas textCanvas = endingText.GetComponentInParent<Canvas>(true);
+        Canvas blackCanvas = blackScreen.GetComponentInParent<Canvas>(true);
+
+        if (textCanvas != null &&
+            blackCanvas != null &&
+            textCanvas != blackCanvas)
+        {
+            // Screen Space Overlay 画布按 sortingOrder 决定前后：
+            // 黑屏压在文本画布之下，文本才能在全黑后显示。
+            blackCanvas.sortingOrder = textCanvas.sortingOrder - 1;
+        }
+    }
+
+    // 解析结尾文本的 CanvasGroup：优先用文本自身的组，
+    // 没有则在文本物体上补一个，避免改动父级面板的透明度。
+    private void PrepareEndingText()
+    {
+        if (endingText == null)
+        {
+            return;
+        }
+
+        endingTextGroup = endingText.GetComponent<CanvasGroup>();
+
+        if (endingTextGroup == null)
+        {
+            endingTextGroup =
+                endingText.gameObject.AddComponent<CanvasGroup>();
+        }
+
+        endingTextGroup.alpha = 0f;
+        endingTextGroup.blocksRaycasts = false;
+
+        if (!endingText.gameObject.activeSelf)
+        {
+            endingText.gameObject.SetActive(true);
+        }
+    }
+
+    // 奔跑剩余距离到阈值时启动：黑屏从透明淡入到全黑。
+    private IEnumerator FadeEndingToBlack()
+    {
+        if (blackScreen == null)
+        {
+            blackScreen = CreateRuntimeBlackScreen();
+        }
+
+        blackScreen.blocksRaycasts = true;
+
+        yield return FadeBlackScreen(0f, 1f, endingFadeInDuration);
+    }
+
+    // 全黑后的结尾流程：置位成就标记 → 文本渐入 → 停留 → 渐出
+    // → 切换到主菜单场景。文本未赋值时跳过文本，直接切场景。
+    private IEnumerator PlayEndingSequence()
+    {
+        SetEndingAchievementFlag();
+
+        if (endingTextGroup == null && endingText != null)
+        {
+            PrepareEndingText();
+        }
+
+        if (endingTextGroup != null)
+        {
+            endingTextGroup.alpha = 0f;
+
+            yield return FadeCanvasGroup(
+                endingTextGroup,
+                0f,
+                1f,
+                endingTextFadeInDuration
+            );
+
+            if (endingTextHoldDuration > 0f)
+            {
+                yield return new WaitForSeconds(
+                    endingTextHoldDuration
+                );
+            }
+
+            yield return FadeCanvasGroup(
+                endingTextGroup,
+                1f,
+                0f,
+                endingTextFadeOutDuration
+            );
+        }
+        else
+        {
+            Debug.LogWarning(
+                "Chapter01Controller：结尾文本未赋值，" +
+                    "跳过文本直接切换主菜单。",
+                this
+            );
+        }
+
+        // 文本完全渐出后切主菜单；走全局场景过渡（黑屏溶解、
+        // 异步加载与回到主菜单后的进度清理都由它负责）。
+        SceneTransitionController.TransitionTo(
+            SceneTransitionController.SceneMainMenu
+        );
+    }
+
+    // 完全黑屏后置位检查器配置的成就标记；留空则不置位，
+    // 重复置位由 DialogueFlags 自身去重。
+    private void SetEndingAchievementFlag()
+    {
+        if (string.IsNullOrWhiteSpace(endingAchievementFlag))
+        {
+            return;
+        }
+
+        DialogueFlags.SetFlag(endingAchievementFlag, true);
+    }
+
+    // 把 CanvasGroup 的 alpha 从 from 插值到 to；duration<=0 时立即完成。
+    private IEnumerator FadeCanvasGroup(
+        CanvasGroup group,
+        float from,
+        float to,
+        float duration
+    )
+    {
+        if (group == null)
+        {
+            yield break;
+        }
+
+        if (duration <= 0f)
+        {
+            group.alpha = to;
+            yield break;
+        }
+
+        group.alpha = from;
+
+        for (float elapsed = 0f;
+             elapsed < duration;
+             elapsed += Time.deltaTime)
+        {
+            float t = Mathf.Clamp01(elapsed / duration);
+            group.alpha = Mathf.Lerp(from, to, t);
+            yield return null;
+        }
+
+        group.alpha = to;
     }
 
     // 把相机从 from 缓动到 to，进度经缓动曲线映射。
@@ -2133,42 +2553,117 @@ public class Chapter01Controller : MonoBehaviour
 
     // 奔跑段：按时长从原位姿平移到目标位置，叠加竖向起伏、左右摆动
     // 与轻微俯仰/侧倾，模拟奔跑时的镜头晃动；结束时落到目标位置。
+    // turnTarget 有值时：剩余距离进入 turnStartRemainingDistance 后，
+    // 朝向按窗口内奔跑进度缓入缓出转向该目标（起步与收尾慢、中间快），
+    // 落到目标位置时正好转完。
+    // 当剩余距离比例降到 endingStartRemainingDistance 时，回调
+    // onEndingStart 一次（用于开始结尾黑屏），继续跑完剩余路程。
     private IEnumerator RunCameraToTarget(
         Transform cameraTransform,
         Vector3 fromPosition,
         Quaternion fromRotation,
         Vector3 toPosition,
-        float duration
+        float duration,
+        float endingStartRemainingDistance,
+        System.Action onEndingStart,
+        Transform turnTarget = null,
+        float turnStartRemainingDistance = 0f
     )
     {
-        Vector3 right = fromRotation * Vector3.right;
+        // 终点朝向：有转向目标时落地必须正好对着它，
+        // 否则整段保持起始朝向。
+        Quaternion endRotation = turnTarget != null
+            ? Quaternion.LookRotation(turnTarget.position - toPosition)
+            : fromRotation;
 
-        for (float elapsed = 0f;
-             elapsed < duration;
-             elapsed += Time.deltaTime)
+        // 当前朝向：未进入转向窗口前恒为起始朝向。
+        Quaternion currentRotation = fromRotation;
+
+        if (duration <= 0f)
         {
-            float t = Mathf.Clamp01(elapsed / duration);
-            float phase = elapsed * runShakeFrequency * Mathf.PI * 2f;
-
-            Vector3 shakeOffset =
-                right * (Mathf.Sin(phase) * runShakeAmplitude * 0.6f) +
-                Vector3.up * (Mathf.Sin(phase * 2f) * runShakeAmplitude);
-
-            Quaternion shakeRotation = Quaternion.Euler(
-                Mathf.Sin(phase * 2f + 0.6f) * runShakeAngle,
-                0f,
-                Mathf.Sin(phase) * runShakeAngle
+            onEndingStart?.Invoke();
+            cameraTransform.SetPositionAndRotation(
+                toPosition,
+                endRotation
             );
+        }
+        else
+        {
+            Vector3 right = fromRotation * Vector3.right;
+
+            for (float elapsed = 0f;
+                 elapsed < duration;
+                 elapsed += Time.deltaTime)
+            {
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // 距离目标越近，剩余比例越小；到阈值时只触发一次。
+                if (onEndingStart != null &&
+                    1f - t <= endingStartRemainingDistance)
+                {
+                    onEndingStart();
+                    onEndingStart = null;
+                }
+
+                Vector3 position = Vector3.LerpUnclamped(
+                    fromPosition,
+                    toPosition,
+                    t
+                );
+
+                // 距离 Run Target 还剩 5% 起，按窗口内的奔跑进度缓入缓出
+                // 转向 Target2（初始与结尾慢、中间快），落地正好转完。
+                if (turnTarget != null &&
+                    1f - t <= turnStartRemainingDistance)
+                {
+                    float progress = Mathf.InverseLerp(
+                        1f - turnStartRemainingDistance,
+                        1f,
+                        t
+                    );
+
+                    // 非线性转向：起步与收尾慢、中间快。
+                    float eased = Mathf.SmoothStep(0f, 1f, progress);
+
+                    currentRotation = Quaternion.Slerp(
+                        fromRotation,
+                        endRotation,
+                        eased
+                    );
+                }
+
+                float phase = elapsed * runShakeFrequency * Mathf.PI * 2f;
+
+                Vector3 shakeOffset =
+                    right * (Mathf.Sin(phase) * runShakeAmplitude * 0.6f) +
+                    Vector3.up *
+                        (Mathf.Sin(phase * 2f) * runShakeAmplitude);
+
+                Quaternion shakeRotation = Quaternion.Euler(
+                    Mathf.Sin(phase * 2f + 0.6f) * runShakeAngle,
+                    0f,
+                    Mathf.Sin(phase) * runShakeAngle
+                );
+
+                cameraTransform.SetPositionAndRotation(
+                    position + shakeOffset,
+                    currentRotation * shakeRotation
+                );
+
+                yield return null;
+            }
+
+            // threshold 设为 0 时，上面的循环在 t 到 1 之前就结束，
+            // 这里补一次，保证奔跑结束时仍会启动结尾演出。
+            if (onEndingStart != null)
+            {
+                onEndingStart();
+            }
 
             cameraTransform.SetPositionAndRotation(
-                Vector3.LerpUnclamped(fromPosition, toPosition, t) +
-                    shakeOffset,
-                fromRotation * shakeRotation
+                toPosition,
+                endRotation
             );
-
-            yield return null;
         }
-
-        cameraTransform.SetPositionAndRotation(toPosition, fromRotation);
     }
 }
